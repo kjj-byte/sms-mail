@@ -6,7 +6,7 @@
 $ErrorActionPreference = 'Stop'
 $projectRoot = $PSScriptRoot
 $distDir = Join-Path $projectRoot 'dist'
-foreach ($f in 'index.html', 'app.js', 'styles.css') {
+foreach ($f in 'index.html', 'app.js', 'styles.css', 'rows.json') {
     if (!(Test-Path -LiteralPath (Join-Path $distDir $f))) { throw "dist/$f not found; run a price update first." }
 }
 
@@ -26,9 +26,10 @@ try {
     Copy-Item -LiteralPath (Join-Path $distDir 'index.html') -Destination (Join-Path $work 'index.html') -Force
     Copy-Item -LiteralPath (Join-Path $distDir 'app.js') -Destination (Join-Path $work 'app.js') -Force
     Copy-Item -LiteralPath (Join-Path $distDir 'styles.css') -Destination (Join-Path $work 'styles.css') -Force
+    Copy-Item -LiteralPath (Join-Path $distDir 'rows.json') -Destination (Join-Path $work 'rows.json') -Force
     # .nojekyll stops GitHub Pages from running Jekyll over the large HTML.
     New-Item -ItemType File -Path (Join-Path $work '.nojekyll') -Force | Out-Null
-    git -C $work add index.html app.js styles.css .nojekyll
+    git -C $work add index.html app.js styles.css rows.json .nojekyll
     $stamp = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd HH:mm UTC')
     $identity = git -C $projectRoot config user.name; if (!$identity) { $identity = 'sms-publish' }
     $email = git -C $projectRoot config user.email; if (!$email) { $email = 'sms-publish@localhost' }

@@ -235,8 +235,6 @@
             <div class="ledger-footer">
               <button id="ledger-more" class="ledger-more-btn" type="button" hidden>加载更多报价</button>
             </div>
-            
-            <script type="application/json" id="rows-data">{{.RowsJSON}}</script>
           </section>
 
           <!-- 待核实与说明折叠模块 -->
@@ -334,31 +332,31 @@
               </div>
               <div class="mail-inputs-row">
                 <div class="mail-field-item">
-                  <label>用途 / 目标服务域名</label>
-                  <input name="for" placeholder="如 github.com, twitter.com" required maxlength="253" autocomplete="off">
+                  <label for="mail-for">用途 / 目标服务域名</label>
+                  <input name="for" id="mail-for" placeholder="如 github.com, twitter.com" required maxlength="253" autocomplete="off">
                 </div>
                 <div id="mail-create-fields" class="mail-fields-group">
                   <div class="mail-field-item">
-                    <label>指定渠道平台</label>
-                    <select name="provider"><option value="">自动调度最佳可用渠道</option></select>
+                    <label for="mail-provider">指定渠道平台</label>
+                    <select name="provider" id="mail-provider"><option value="">自动调度最佳可用渠道</option></select>
                   </div>
                   <div class="mail-field-item">
-                    <label>指定域名 (可选)</label>
-                    <input name="domain" maxlength="253" placeholder="留空使用渠道默认随机域名">
+                    <label for="mail-domain">指定域名 (可选)</label>
+                    <input name="domain" id="mail-domain" maxlength="253" placeholder="留空使用渠道默认随机域名">
                   </div>
                 </div>
                 <div id="mail-attach-fields" class="mail-fields-group" hidden>
                   <div class="mail-field-item">
-                    <label>完整邮箱地址</label>
-                    <input name="address" type="email" maxlength="254" placeholder="user@example.com" autocomplete="off" disabled>
+                    <label for="mail-attach-address">完整邮箱地址</label>
+                    <input name="address" id="mail-attach-address" type="email" maxlength="254" placeholder="user@example.com" autocomplete="off" disabled>
                   </div>
                   <div class="mail-field-item">
-                    <label>应用授权码 / 专用密码</label>
-                    <input name="password" type="password" maxlength="200" autocomplete="off" placeholder="IMAP 授权码" disabled>
+                    <label for="mail-password">应用授权码 / 专用密码</label>
+                    <input name="password" type="password" id="mail-password" maxlength="200" autocomplete="off" placeholder="IMAP 授权码" disabled>
                   </div>
                   <div class="mail-field-item">
-                    <label>IMAP 服务器 (可选)</label>
-                    <input name="imapHost" maxlength="253" autocomplete="off" placeholder="留空按域名自动推导" disabled>
+                    <label for="mail-imap-host">IMAP 服务器 (可选)</label>
+                    <input name="imapHost" id="mail-imap-host" maxlength="253" autocomplete="off" placeholder="留空按域名自动推导" disabled>
                   </div>
                 </div>
               </div>

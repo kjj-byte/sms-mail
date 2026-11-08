@@ -24,27 +24,40 @@
   };
   const channelURL = pi => (rows.find(row => row.pi === pi) || {}).h || '';
 
-  // ---- Data source: compact rows embedded by the generator (no per-card DOM upfront).
-  const rowsDataEl = document.querySelector('#rows-data');
-  const payload = rowsDataEl ? JSON.parse(rowsDataEl.textContent) : { products: {}, rows: [] };
-  const products = payload.products || {};
-  const channels = payload.channels || {};
-  const pool = payload.pool || [''];
-  const rows = (payload.rows || []).map((r, i) => {
-    const p = products[r.pid] || {};
-    r.order = i;
-    r.priced = r.a != null && r.a !== '';
-    r.area = r.k === 'free' ? 'free' : (r.k === 'pending' ? 'unknown' : 'paid');
-    // expand pooled string indexes back to their values
-    r.t = pool[r.t] || ''; r.h = pool[r.h] || ''; r.me = pool[r.me] || ''; r.os = pool[r.os] || '';
-    r.ov = pool[r.ov] || ''; r.ca = pool[r.ca] || '';
-    r.n = pool[r.n] || ''; r.sc = pool[r.sc] || '';
-    // pull product-level fields up for the renderer
-    r.pn = p.pn || ''; r.d = p.d || ''; r.rp = p.rp || ''; r.rn = p.rn || ''; r.ru = p.ru || '';
-    r.co = p.co || ''; r.st = p.st || ''; r.ar = p.ar || ''; r.rs = p.rs || ''; r.on = p.on || '';
-    r.ps = p.ps || []; r.m = p.m || ''; r.pv = p.pv || '';
-    return r;
-  });
+  // ---- Data source: compact rows loaded asynchronously from rows.json (keeps
+  // index.html small so the page opens fast even on slow connections).
+  let rows = [];
+  let products = {};
+  let channels = {};
+  let pool = [''];
+  let rateDate = '';
+  function applyPayload(payload) {
+    products = payload.products || {};
+    channels = payload.channels || {};
+    pool = payload.pool || [''];
+    rateDate = payload.rate_date || '';
+    rows = (payload.rows || []).map((r, i) => {
+      const p = products[r.pid] || {};
+      r.order = i;
+      r.priced = r.a != null && r.a !== '';
+      r.area = r.k === 'free' ? 'free' : (r.k === 'pending' ? 'unknown' : 'paid');
+      // expand pooled string indexes back to their values
+      r.t = pool[r.t] || ''; r.h = pool[r.h] || ''; r.me = pool[r.me] || ''; r.os = pool[r.os] || '';
+      r.ov = pool[r.ov] || ''; r.ca = pool[r.ca] || '';
+      r.n = pool[r.n] || ''; r.sc = pool[r.sc] || '';
+      // pull product-level fields up for the renderer
+      r.pn = p.pn || ''; r.d = p.d || ''; r.rp = p.rp || ''; r.rn = p.rn || ''; r.ru = p.ru || '';
+      r.co = p.co || ''; r.st = p.st || ''; r.ar = p.ar || ''; r.rs = p.rs || ''; r.on = p.on || '';
+      r.ps = p.ps || []; r.m = p.m || ''; r.pv = p.pv || '';
+      return r;
+    });
+    byChannel = {};
+    for (const r of rows) {
+      if (!r.s) continue;
+      const k = r.pi + '|' + r.s;
+      (byChannel[k] || (byChannel[k] = [])).push(r);
+    }
+  }
   const PAGE = 60;
   let shown = 0, matched = [];
 
@@ -107,12 +120,8 @@
 
   // Group offers by provider+service so each card can show the channel's full list.
   // Include cross-country starting prices and listings without a known country.
-  const byChannel = {};
-  for (const r of rows) {
-    if (!r.s) continue;
-    const k = r.pi + '|' + r.s;
-    (byChannel[k] || (byChannel[k] = [])).push(r);
-  }
+  // Populated in applyPayload after rows load.
+  let byChannel = {};
 
   // Build one card element from a compact row.
   function cardHTML(r) {
@@ -152,7 +161,7 @@
       : '';
     return `<article class="card">` +
       `<div class="c-head"><div class="c-name"><h3>${esc(r.p)}</h3><p>${esc(r.s)} · ${esc(countryLabel(r))}</p></div>` +
-      `<div class="c-price">${price}<small>${esc(r.u)}</small>${r.oc ? `<small class="original-price">原价 ${esc(r.oa)} ${esc(r.oc)} · ${esc(payload.rate_date)} 汇率折算</small>` : ''}</div></div>` +
+      `<div class="c-price">${price}<small>${esc(r.u)}</small>${r.oc ? `<small class="original-price">原价 ${esc(r.oa)} ${esc(r.oc)} · ${esc(rateDate)} 汇率折算</small>` : ''}</div></div>` +
       `<div class="c-tags">${tags.join('')}</div>` +
       `<div class="c-meta"><span>可用时长 <b>${esc(r.d)}</b></span><span>期限内再收码 <b>${esc(r.rp)}</b></span><span>同号续费 <b>${esc(r.rn)}</b></span><span>结束后复用 <b>${esc(r.ru)}</b></span></div>` +
       `<div class="c-actions"><a class="btn" data-purchase="${esc(r.pi)}" href="${esc(r.h)}" target="_blank" rel="noopener noreferrer${sponsored}">${buyLabel}</a>${manage}${previewBtn}<small class="stamp">${stamp}</small></div>` +
@@ -162,7 +171,7 @@
       `<p>号码类型：${esc(r.n)}；适用范围：${esc(r.sc)}</p>` +
       `<dl><dt>起算点</dt><dd>${esc(r.st || '')}</dd><dt>自动续费</dt><dd>${esc(r.ar || '')}</dd><dt>到期恢复原号</dt><dd>${esc(r.rs || '')}</dd><dt>在线方式</dt><dd>${esc(r.on || '')}</dd><dt>续费价格</dt><dd>${r.ra ? esc(r.cu) + ' ' + esc(r.ra) : '未知，官网确认'}</dd></dl>` +
       `<p>官网可能需要重新选择服务、国家和租期。${r.iv ? '本购买入口含管理员邀请信息。' : ''}</p>` +
-      (r.ora ? `<p>续费原价 ${esc(r.ora)} ${esc(r.oc)}；美元金额按 ${esc(payload.rate_date)} 汇率折算。</p>` : '') +
+      (r.ora ? `<p>续费原价 ${esc(r.ora)} ${esc(r.oc)}；美元金额按 ${esc(rateDate)} 汇率折算。</p>` : '') +
       `<ul>${(r.ps || []).map(u => `<li><a href="${esc(u)}" target="_blank" rel="noopener noreferrer">产品规则来源：${esc(u)}</a></li>`).join('')}${r.os ? `<li><a href="${esc(r.os)}" target="_blank" rel="noopener noreferrer">报价来源</a></li>` : ''}</ul></details>` +
       depositNote(r) +
       `</article>`;
@@ -348,7 +357,7 @@
     }
     document.querySelector('#selected').textContent = keys.filter(k => state[k] && k !== 'sort').map(k => {
       const el = field(k);
-      return k === 'q' ? `搜索：${state[k]}` : `${el.closest('label').firstChild.textContent.trim()}：${el.selectedOptions[0].textContent}`;
+      return k === 'q' ? `搜索：${state[k]}` : `${el.closest('label').querySelector('.cell-label, span').textContent.trim()}：${el.selectedOptions[0].textContent}`;
     }).join('；');
     if (push) {
       const url = new URL(location.href);
@@ -377,7 +386,7 @@
     const priceText = x.priced ? `${x.oc ? '≈ ' : ''}${esc(x.a)} ${esc(x.cu)} · ${esc(offerLabel(x.ok))}` : esc(offerLabel(x.ok));
     return `<a class="chan-row" href="${esc(x.h)}" target="_blank" rel="noopener noreferrer">` +
       `<span class="chan-country">${esc(countryLabel(x))}${x.sm ? `<small>${esc(x.sm)}</small>` : ''}</span>` +
-      `<span class="chan-price">${priceText}${x.oc ? `<small>原价 ${esc(x.oa)} ${esc(x.oc)} · ${esc(payload.rate_date)} 汇率折算</small>` : ''}</span>` +
+      `<span class="chan-price">${priceText}${x.oc ? `<small>原价 ${esc(x.oa)} ${esc(x.oc)} · ${esc(rateDate)} 汇率折算</small>` : ''}</span>` +
       `<span class="chan-term">${esc(x.t || '')}</span>` +
       `<span class="chan-go">前往</span></a>`;
   }
@@ -429,7 +438,12 @@
   form.addEventListener('reset', () => setTimeout(() => { field('sort').value = 'price_asc'; services(); notice.textContent = ''; render(true); }, 0));
   window.addEventListener('popstate', restore);
   form.hidden = false;
-  restore();
+  // Load the price rows asynchronously, then run the initial render.
+  fetch('rows.json', {cache: 'no-cache'})
+    .then(r => r.ok ? r.json() : {})
+    .then(data => { applyPayload(data || {}); })
+    .catch(() => { /* keep empty defaults; page still renders filters */ })
+    .finally(() => { restore(); });
 })();
 
 (() => {
@@ -438,7 +452,7 @@
   if (!$('mail-view')) return;
   const form = $('mail-create'), controls = $('mail-controls');
   const field = name => form.elements.namedItem(name);
-  const local = location.origin === 'http://127.0.0.1:8787' && location.pathname.startsWith('/preview/');
+  const local = location.protocol === 'http:' && location.hostname === '127.0.0.1' && location.pathname.startsWith('/preview/');
   const labels = {active: '有效', expired: '已过期', closed: '已关闭'};
   let csrf = '', ready = false, connecting = false, selected = null, timer, polling, controller, reading;
   let providers = [], inboxes = [], mode = 'create', selectedMessage = '', codeValue = '', pollAfter = 5000;
@@ -453,13 +467,25 @@
   const providerName = name => providers.find(p => p.name === name)?.displayName || name;
   const date = value => value && Number.isFinite(new Date(value).getTime()) ? new Date(value).toLocaleString() : '时间未知';
   async function api(path, method = 'GET', body, signal) {
-    const response = await fetch('/mail-api' + path, {
-      method, signal, cache: 'no-store', credentials: 'same-origin',
-      headers: {'X-CSRF-Token': csrf, 'Content-Type': 'application/json'},
-      body: body === undefined ? undefined : JSON.stringify(body)
-    });
-    const data = await response.json();
-    if (!response.ok) { const error = new Error(data.error || `邮箱请求失败（${response.status}）`); error.status = response.status; throw error; }
+    let response;
+    try {
+      response = await fetch('/mail-api' + path, {
+        method, signal, cache: 'no-store', credentials: 'same-origin',
+        headers: {'X-CSRF-Token': csrf, 'Content-Type': 'application/json'},
+        body: body === undefined ? undefined : JSON.stringify(body)
+      });
+    } catch (e) {
+      if (e.name === 'AbortError') throw e;
+      throw new Error('网络连接失败，请检查本机邮箱服务后重试。', {cause: e});
+    }
+    const text = await response.text();
+    let data;
+    try { data = text ? JSON.parse(text) : {}; }
+    catch {
+      const error = new Error(response.ok ? '邮箱服务返回了无法识别的数据，请重试。' : `邮箱请求失败（HTTP ${response.status}），请重试。`);
+      error.status = response.status; throw error;
+    }
+    if (!response.ok) { const error = new Error(`邮箱请求失败（HTTP ${response.status}）${data?.error ? `：${data.error}` : ''}`); error.status = response.status; throw error; }
     return data;
   }
   function stop() {
@@ -636,6 +662,9 @@
       const initial = saved || inboxes.find(i => state(i) === 'active');
       status('邮箱已就绪，创建临时邮箱或接入已有邮箱。');
       if (initial && !selected) { $('mail-composer').open = false; await select(initial); }
+    } catch (e) {
+      controls.disabled = false; $('mail-reload').disabled = false;
+      throw new Error(`邮箱连接失败，请点击「刷新信箱」重试。${e.message ? ` 原因：${e.message}` : ''}`, {cause: e});
     } finally { connecting = false; }
   }
   function switchView() {
@@ -649,7 +678,8 @@
   $('mail-tab').addEventListener('click', () => { if (location.hash === '#mail') switchView(); else location.hash = 'mail'; });
   window.addEventListener('hashchange', switchView);
   form.addEventListener('submit', event => {
-    event.preventDefault(); if (!ready || controls.disabled) return;
+    event.preventDefault(); if (controls.disabled) return;
+    if (!ready) { run(connect, $('mail-submit')); return; }
     controls.disabled = true; status(mode === 'attach' ? '正在验证并接入邮箱…' : '正在创建邮箱，自动调度可能需要一些时间…');
     run(async () => {
       try {
@@ -667,7 +697,7 @@
     $('mail-dispatch-result').textContent = '配置顺序（不代表上游实时可用性）\n' + (data.candidates || []).map((c, i) => `${i + 1}. ${c.displayName || c.provider} · ${c.eligible ? '参与调度' : c.reason}`).join('\n');
     $('mail-dispatch-result').hidden = false;
   }, $('mail-dispatch')));
-  $('mail-reload').addEventListener('click', () => run(async () => { await list(); if (selected) await select(selected); }, $('mail-reload')));
+  $('mail-reload').addEventListener('click', () => run(async () => { if (!ready) { await connect(); return; } await list(); if (selected) await select(selected); }, $('mail-reload')));
   for (const id of ['mail-group', 'mail-filter']) $(id).addEventListener('change', renderInboxes);
   $('mail-search').addEventListener('input', renderInboxes);
   $('mail-refresh').addEventListener('click', () => run(refresh));

@@ -52,18 +52,20 @@ func TestGeneratePreservesOfferKindsConditionsAndOriginalPrices(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, data, found := strings.Cut(string(page), `id="rows-data">`)
-	if !found {
-		t.Fatal("missing rows")
+	if strings.Contains(string(page), `id="rows-data"`) {
+		t.Fatal("rows still inlined into index.html; expected separate rows.json")
 	}
-	data, _, _ = strings.Cut(data, "</script>")
+	data, err := os.ReadFile(filepath.Join(out, "rows.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
 	var payload struct {
 		Products map[string]prodJS
 		Pool     []string
 		Rows     []rowJS
 		RateDate string `json:"rate_date"`
 	}
-	if err := json.Unmarshal([]byte(data), &payload); err != nil {
+	if err := json.Unmarshal(data, &payload); err != nil {
 		t.Fatal(err)
 	}
 	if len(payload.Rows) != 4 || payload.RateDate != rateTimestamp {

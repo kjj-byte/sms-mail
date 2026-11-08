@@ -410,7 +410,7 @@ func Generate(catalogPath, referralsPath, out string) error {
 	defer os.Remove(abs + ".lock")
 	if entries, err := os.ReadDir(abs); err == nil {
 		for _, entry := range entries {
-			if entry.IsDir() || entry.Type()&os.ModeSymlink != 0 || (entry.Name() != "index.html" && entry.Name() != "styles.css" && entry.Name() != "app.js") {
+			if entry.IsDir() || entry.Type()&os.ModeSymlink != 0 || (entry.Name() != "index.html" && entry.Name() != "styles.css" && entry.Name() != "app.js" && entry.Name() != "rows.json") {
 				return errors.New("输出目录包含非导航文件，请选择专用空目录")
 			}
 		}
@@ -426,6 +426,10 @@ func Generate(catalogPath, referralsPath, out string) error {
 	}
 	defer os.RemoveAll(stage)
 	if e = os.WriteFile(filepath.Join(stage, "index.html"), html.Bytes(), 0644); e != nil {
+		return e
+	}
+	// Price rows are served as a separate file so index.html stays small and opens fast.
+	if e = os.WriteFile(filepath.Join(stage, "rows.json"), []byte(page.RowsJSON), 0644); e != nil {
 		return e
 	}
 	for _, name := range []string{"styles.css", "app.js"} {

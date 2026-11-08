@@ -137,16 +137,20 @@ func TestGenerateLinksAndPreserveOld(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	// Cards are now rendered client-side from embedded JSON, so verify the data
-	// payload (the source of truth) rather than pre-rendered HTML.
-	rowsJSON := extractRowsJSON(t, string(b))
+	rowsBytes, e := os.ReadFile(filepath.Join(out, "rows.json"))
+	if e != nil {
+		t.Fatal(e)
+	}
+	// Cards are rendered client-side from rows.json, so verify the data payload
+	// (the source of truth) rather than pre-rendered HTML.
+	rowsJSON := extractRowsJSON(t, string(rowsBytes))
 	all := strings.Join(rowsJSON, "\n") + "\n" + html.UnescapeString(string(b))
 	for _, value := range []string{raw, "https://my.haozhuma.com/?fixture=1", "https://sms-man.com/rent", "https://5sim.net/rules"} {
 		if !strings.Contains(all, value) {
 			t.Fatal("missing preserved URL", value)
 		}
 	}
-	if !strings.Contains(all, `"channels":{`) {
+	if !strings.Contains(string(rowsBytes), `"channels":{`) {
 		t.Fatal("missing channel deposit payload")
 	}
 	os.WriteFile(refs, []byte(`{"schema_version":1,"invitations":{"bogus":"https://evil.test/"}}`), 0600)
@@ -164,7 +168,8 @@ func TestGenerateLinksAndPreserveOld(t *testing.T) {
 		t.Fatal(e)
 	}
 	after, _ = os.ReadFile(filepath.Join(out, "index.html"))
-	if strings.Contains(html.UnescapeString(strings.Join(extractRowsJSON(t, string(after)), "\n")), raw) {
+	afterRows, _ := os.ReadFile(filepath.Join(out, "rows.json"))
+	if strings.Contains(html.UnescapeString(strings.Join(extractRowsJSON(t, string(afterRows)), "\n")), raw) {
 		t.Fatal("restored URL still invited")
 	}
 	os.WriteFile(filepath.Join(out, "private.txt"), []byte("keep"), 0600)
@@ -176,27 +181,17 @@ func TestGenerateLinksAndPreserveOld(t *testing.T) {
 	}
 }
 
-// extractRowsJSON returns all string values from the embedded #rows-data payload,
-// JSON-decoded (so URLs keep their real &, #, % characters).
-func extractRowsJSON(t *testing.T, page string) []string {
+// extractRowsJSON returns all string values from the rows.json payload
+// (served separately from index.html), JSON-decoded so URLs keep their & # %.
+func extractRowsJSON(t *testing.T, payloadJSON string) []string {
 	t.Helper()
-	const tag = `<script type="application/json" id="rows-data">`
-	i := strings.Index(page, tag)
-	if i < 0 {
-		t.Fatal("rows-data script missing")
-	}
-	rest := page[i+len(tag):]
-	j := strings.Index(rest, "</script>")
-	if j < 0 {
-		t.Fatal("rows-data script not closed")
-	}
 	var payload struct {
 		Products map[string]map[string]any `json:"products"`
 		Pool     []string                  `json:"pool"`
 		Rows     []map[string]any          `json:"rows"`
 	}
-	if err := json.Unmarshal([]byte(rest[:j]), &payload); err != nil {
-		t.Fatalf("rows-data invalid JSON: %v", err)
+	if err := json.Unmarshal([]byte(payloadJSON), &payload); err != nil {
+		t.Fatalf("rows.json invalid JSON: %v", err)
 	}
 	var out []string
 	out = append(out, payload.Pool...)
@@ -241,15 +236,16 @@ func TestTemplateEscapingAndDates(t *testing.T) {
 		t.Fatal(e)
 	}
 	page, _ := os.ReadFile(filepath.Join(out, "index.html"))
+	rowsRaw, _ := os.ReadFile(filepath.Join(out, "rows.json"))
 	if strings.Contains(string(page), `<script>alert("x")</script>`) {
 		t.Fatal("unescaped HTML")
 	}
-	// Stale/date facts live in the embedded rows JSON now; the "stale" badge text
+	// Stale/date facts live in the rows JSON now; the "stale" badge text
 	// is emitted client-side, so assert the data payload + renderer template.
-	if !strings.Contains(string(page), `"w":true`) {
+	if !strings.Contains(string(rowsRaw), `"w":true`) {
 		t.Fatal("stale facts not flagged in data")
 	}
-	if !strings.Contains(strings.Join(extractRowsJSON(t, string(page)), "\n"), "2020-01-01") {
+	if !strings.Contains(strings.Join(extractRowsJSON(t, string(rowsRaw)), "\n"), "2020-01-01") {
 		t.Fatal("build refreshed fact date")
 	}
 }
