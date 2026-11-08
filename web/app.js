@@ -17,13 +17,19 @@
   // header (not on every card). Amount is c.d (already hidden upstream when it
   // only says "needs login"); empty means the site has no public amount.
   const depositRow = (name, c, url) => {
-    const amount = c.d ? esc(c.d) : '官网未公开（登录充值页查看）';
-    const pay = c.pm && c.pm.length ? esc(c.pm.join(' / ')) : '官网注册登录后充值页查看';
-    const link = c.pm && c.pm.length ? '' : (url ? ` · <a href="${esc(url)}" target="_blank" rel="noopener noreferrer">官网</a>` : '');
-    return `<div class="deposit-item"><div class="deposit-item-name">${esc(name)}</div>` +
-      `<div class="deposit-item-body"><span class="deposit-amt">起充：${amount}</span>` +
-      `<span class="deposit-pay">支付方式：${pay}${link}</span>` +
-      (c.v ? `<span class="deposit-ver">${esc(c.v)} 核对</span>` : '') + `</div></div>`;
+    const hasAmt = !!c.d;
+    const amount = hasAmt ? esc(c.d) : '官网未公开';
+    const pay = c.pm && c.pm.length
+      ? c.pm.map(m => `<span class="deposit-chip">${esc(m)}</span>`).join('')
+      : `官网注册登录后充值页查看${url ? ` <a href="${esc(url)}" target="_blank" rel="noopener noreferrer">官网↗</a>` : ''}`;
+    return `<div class="deposit-item${hasAmt ? '' : ' is-unknown'}">` +
+      `<div class="deposit-item-head"><span class="deposit-item-name">${esc(name)}</span>` +
+      (c.v ? `<span class="deposit-ver">${esc(c.v)} 核对</span>` : '') + `</div>` +
+      `<div class="deposit-amt-row"><span class="deposit-amt-label">起充</span>` +
+      `<span class="deposit-amt${hasAmt ? '' : ' muted'}">${amount}</span></div>` +
+      `<div class="deposit-pay-row"><span class="deposit-pay-label">支付</span>` +
+      `<span class="deposit-chips">${pay}</span></div>` +
+      `</div>`;
   };
   function renderDepositDropdown() {
     const box = document.querySelector('#deposit-list');
@@ -38,6 +44,8 @@
       parts.push(depositRow(r.p, c, channelURL(r.pi)));
     }
     box.innerHTML = parts.join('');
+    const cnt = document.querySelector('#deposit-count');
+    if (cnt) cnt.textContent = parts.length ? parts.length + ' 个渠道' : '';
     positionDepositPanel();
   }
   // The dropdown can sit anywhere along the header, so clamp its panel inside
@@ -412,19 +420,30 @@
   }
   ledgerMore.addEventListener('click', appendPage);
 
-  // Cards per row: user-selectable, remembered in localStorage. The ledger grid
-  // reads the data-per-row attribute; unset/3 uses the CSS default.
+  // Cards per row: segmented buttons drive a hidden <select> (the state source,
+  // remembered in localStorage). The ledger grid reads the data-per-row attr.
   const perRowSel = document.querySelector('#per-row');
-  const applyPerRow = n => { if (ledger) ledger.dataset.perRow = String(n); };
+  const perRowSeg = document.querySelector('#per-row-seg');
+  const applyPerRow = n => {
+    if (ledger) ledger.dataset.perRow = String(n);
+    if (perRowSeg) perRowSeg.querySelectorAll('button').forEach(b =>
+      b.setAttribute('aria-pressed', b.dataset.n === String(n) ? 'true' : 'false'));
+  };
   if (perRowSel) {
     let saved = '3';
     try { saved = localStorage.getItem('perRow') || '3'; } catch { }
     if (![...perRowSel.options].some(o => o.value === saved)) saved = '3';
     perRowSel.value = saved;
     applyPerRow(saved);
-    perRowSel.addEventListener('change', () => {
-      applyPerRow(perRowSel.value);
-      try { localStorage.setItem('perRow', perRowSel.value); } catch { }
+    const commit = n => {
+      perRowSel.value = String(n);
+      applyPerRow(n);
+      try { localStorage.setItem('perRow', String(n)); } catch { }
+    };
+    perRowSel.addEventListener('change', () => commit(perRowSel.value));
+    if (perRowSeg) perRowSeg.addEventListener('click', e => {
+      const btn = e.target.closest('button');
+      if (btn) commit(btn.dataset.n);
     });
   }
 

@@ -219,24 +219,40 @@
                 <h2>实时比价结果</h2>
                 <span id="count" class="count-badge" role="status">{{len .Rows}} 条渠道记录</span>
                 <details class="deposit-dropdown" id="deposit-dropdown">
-                  <summary class="deposit-summary" aria-label="各渠道起充与支付信息">💰 各渠道起充</summary>
+                  <summary class="deposit-summary" aria-label="各渠道起充与支付信息">
+                    <svg class="deposit-summary-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+                    <span class="deposit-summary-text">各渠道起充</span>
+                    <span class="deposit-count" id="deposit-count"></span>
+                    <svg class="deposit-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                  </summary>
                   <div class="deposit-panel">
-                    <p class="deposit-panel-hint">各渠道公开的最低保充值（起充）与支付方式；标注“官网未公开”者需登录官网充值页查看。金额均为渠道官网公开说明，未逐一登录账户核实。</p>
+                    <div class="deposit-panel-head">
+                      <span class="deposit-panel-title">各渠道起充与支付</span>
+                      <span class="deposit-panel-sub">金额为渠道官网公开说明，未逐一登录账户核实</span>
+                    </div>
                     <div class="deposit-list" id="deposit-list"></div>
+                    <p class="deposit-panel-foot">标注「官网未公开」者需登录官网充值页查看；支付方式以官网为准。</p>
                   </div>
                 </details>
               </div>
               <div class="board-note">
-                <span>⚡ 公开资源价不等于实际到手价 · “≈”表示汇率折算参考值 · 交易在对应官网完成</span>
-                <label class="per-row-control" title="每行显示多少张报价卡片">
-                  <span>每行</span>
-                  <select id="per-row" aria-label="每行卡片数量">
+                <span class="board-note-text">⚡ 公开资源价不等于实际到手价 · “≈”表示汇率折算参考值 · 交易在对应官网完成</span>
+                <div class="per-row-control" role="group" aria-label="每行卡片数量">
+                  <span class="per-row-label">每行</span>
+                  <div class="per-row-seg" id="per-row-seg">
+                    <button type="button" data-n="2" aria-pressed="false">2</button>
+                    <button type="button" data-n="3" aria-pressed="true">3</button>
+                    <button type="button" data-n="4" aria-pressed="false">4</button>
+                    <button type="button" data-n="5" aria-pressed="false">5</button>
+                  </div>
+                  <span class="per-row-suffix">张</span>
+                  <select id="per-row" aria-label="每行卡片数量" hidden>
                     <option value="2">2 张</option>
                     <option value="3" selected>3 张</option>
                     <option value="4">4 张</option>
                     <option value="5">5 张</option>
                   </select>
-                </label>
+                </div>
               </div>
             </div>
 
