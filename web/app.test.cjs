@@ -196,22 +196,20 @@ test('invited free listings label the registration destination and retain offici
   assert.match(fixture('',0,[{...row,iv:false}]).html,/查看免费号码/);
 });
 
-test('recharge facts render as small print only for channels that have them',()=>{
+test('recharge facts moved off cards into the header dropdown',()=>{
+  // Cards no longer carry per-card deposit small print (it was too long); the
+  // per-channel minimum/payment facts now render once in the #deposit-dropdown.
   const priced=fixture('',1);
-  assert.match(priced.html,/最低充值 3 USD/);
-  assert.match(priced.html,/可用 Visa \/ Mastercard/);
-  assert.match(priced.html,/2026-11-08 核对/);
-  assert.match(priced.html,/<p class="c-deposit">/);
-  const unknown=fixture('',0,[quote({pi:'channel'})]);
-  assert.ok(!unknown.html.includes('c-deposit'));
+  assert.ok(!priced.html.includes('c-deposit'));
+  assert.ok(!/最低充值 3 USD/.test(priced.html));
 });
 
-test('unknown payment methods point at the provider page instead of claiming a method',()=>{
-  assert.match(fixture('',0,[quote({pi:'fivesim'})]).html,/可用 Visa \/ Mastercard/);
-  const unknown=fixture('',0,[quote({pi:'fivesim',h:'https://example.test/chat'})],undefined,[]).html;
-  assert.ok(!unknown.includes(' · 可用 '));
-  assert.match(unknown,/支付方式以官网注册登录后的充值页为准/);
-  assert.match(unknown,/<a href="https:\/\/example\.test\/chat" target="_blank" rel="noopener noreferrer">官网<\/a>/);
+test('cards no longer claim payment methods (moved to header dropdown)',()=>{
+  // Payment methods used to be printed on each card; they now live in the
+  // #deposit-dropdown only, so a card must not assert a payment method.
+  const withPay=fixture('',0,[quote({pi:'fivesim'})]).html;
+  assert.ok(!withPay.includes(' · 可用 '));
+  assert.ok(!withPay.includes('支付方式以官网注册登录后的充值页为准'));
 });
 
 test('static quotes expire on later visits at the 24-hour and seven-day boundaries',()=>{

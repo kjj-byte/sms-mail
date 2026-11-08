@@ -62,6 +62,20 @@ type channelJS struct {
 	V  string   `json:"v,omitempty"`  // payment info verified date
 }
 
+// noPublicDeposit reports whether a deposit note does not state a concrete
+// minimum amount — it only says the amount needs a login / is not public / the
+// top-up page shows it, or is just a default preset. Such notes are hidden on
+// the card ("最低充值金额需登录查看" 类字样不再显示); notes with a stated amount,
+// free numbers, or pay-per-order are kept verbatim.
+func noPublicDeposit(note string) bool {
+	for _, hint := range []string{"需登录", "未公开", "无公开充值说明", "以购买 credits 页为准", "以官网充值页为准", "按所选支付方式显示", "取决于", "查询限额"} {
+		if strings.Contains(note, hint) {
+			return true
+		}
+	}
+	return false
+}
+
 // rowJS is the minimal per-card payload the client uses to build a card on demand.
 type rowJS struct {
 	P   string `json:"p"`             // provider name
@@ -305,9 +319,16 @@ func Generate(catalogPath, referralsPath, out string) error {
 	jsProducts := map[string]prodJS{}
 	channels := map[string]channelJS{}
 	for _, p := range c.Providers {
-		if p.DepositNote != "" {
-			channels[p.ID] = channelJS{D: p.DepositNote, Pm: p.PaymentMethods, V: p.PaymentVerified}
+		if p.DepositNote == "" {
+			continue
 		}
+		// Hide the deposit sentence when it only says "requires login / not public"
+		// with no actual amount; keep payment methods and verified date.
+		d := p.DepositNote
+		if noPublicDeposit(d) {
+			d = ""
+		}
+		channels[p.ID] = channelJS{D: d, Pm: p.PaymentMethods, V: p.PaymentVerified}
 	}
 	jsRows := make([]rowJS, 0, len(page.Rows))
 	// String pool for high-repetition fields (term/method/source/date/purchase URL)

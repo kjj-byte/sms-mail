@@ -108,3 +108,30 @@ func TestSortOffersKeepsComparisonDimensionsSeparate(t *testing.T) {
 		}
 	}
 }
+
+func TestNoPublicDeposit(t *testing.T) {
+	// Hidden: only a login/unverified placeholder, no concrete amount → card must
+	// not show the "需登录查看" wording.
+	for _, note := range []string{
+		"最低充值金额需登录查看", "最低充值以官网充值页为准（需登录）",
+		"最低充值金额未公开核实；登录后在 Balance → Refill 按支付方式查看限额",
+		"最低充值金额需登录查看（官网无公开充值说明）",
+		"最低充值按所选支付方式显示（仅支持加密货币）",
+		"最低充值金额需登录查看（官网说明取决于所选支付方式）",
+	} {
+		if !noPublicDeposit(note) {
+			t.Errorf("expected hidden: %q", note)
+		}
+	}
+	// Shown: a concrete amount, free numbers, or pay-per-order stay verbatim.
+	for _, note := range []string{
+		"最低充值 3 USD（快捷档 5/10/20/50/100/200）", "最低充值 2 USDT",
+		"AnyPay/SBP 渠道官网明示最低 1000 RUB", "尼日利亚银行卡渠道官网明示最低 5 USD",
+		"公开预设最低 $25 起（官网未标为最低）", "免费公共号码，无需充值",
+		"无账户余额，按单支付（闪电网络）",
+	} {
+		if noPublicDeposit(note) {
+			t.Errorf("expected shown: %q", note)
+		}
+	}
+}

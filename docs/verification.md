@@ -2,6 +2,44 @@
 
 测试环境：Windows amd64，Go 1.26.5。离线测试使用人工凭据，不充值购买、不发送短信；生成时保留本地已有邀请配置，不验证平台归因。
 
+## 卡片每行张数可选（2026-11-08）
+
+用户要求：默认每行 3 张，增加「每行几张」的可选项。
+
+- `web/index.gohtml`：`board-note` 内新增 `<select id="per-row">`（2/3/4/5 张，默认 3）。
+- `web/styles.css`：`.ledger-container` 默认 `repeat(3, minmax(0,1fr))`，用 CSS 变量 `--per-row` + `[data-per-row="2|3|4|5"]` 切换；≤768px 媒体查询强制 1 列（含 `[data-per-row]` 选择器以压过属性特异性）。
+- `web/app.js`：绑定 `#per-row` → 设 `#ledger` 的 `data-per-row`，读写 `localStorage.perRow` 记住选择；元素缺失时安全跳过。
+- 验证：CDP 无头 Chrome——默认 cols=3；选 2/4/5 立即变为 2/4/5 列；刷新后保持所选；390px 强制 1 列。桌面 4 张/行截图确认无溢出。根模块 `go test ./...`、`go vet`、管理端 `go test ./...` 通过；已重建 `sitegen.exe` 并重新生成 `dist`。前端 `node --test` 仍因本机 Node v24 `vm` 无 `fetch` 整体报错（既有环境问题）。
+
+## 起充信息移入「实时比价结果」右侧下拉信息框（2026-11-08）
+
+用户反馈每张卡片底部那行「起充 + 支付方式 + 核对日期」太长。改为在「实时比价结果」标题右侧放一个下拉信息框集中展示。
+
+- `web/index.gohtml`：`board-title-group` 内新增 `<details class="deposit-dropdown" id="deposit-dropdown">`，`summary` 为「💰 各渠道起充」，面板含说明 + `#deposit-list`。
+- `web/app.js`：删除卡片上的 `depositNote`；新增 `depositRow`/`renderDepositDropdown`，按平台顺序（去重 `pi`）生成一条条「平台名 / 起充 / 支付方式 / 核对日期」；无数值平台显示「官网未公开（登录充值页查看）」并给官网链接。`renderDepositDropdown` 在 `applyPayload` 末尾调用。`positionDepositPanel` 在 `toggle`/`resize` 时按视口 clamp 面板左右，避免窄屏溢出（CSS 单靠 left/right 无法双向 clamp）。
+- `web/styles.css`：新增 `.deposit-dropdown/summary/panel/item` 等样式，沿用页面 token（深色 popover、青色强调、细滚动条）。
+- `web/app.test.cjs`：两条原断言「卡片上有 recharge 小字」改为「卡片不再含 `c-deposit`」。
+- 验证：CDP 无头 Chrome 实测——桌面 60 卡、下拉 22 条、卡片 `c-deposit` 为 0；面板在 320/360/390/700/860/901/1300 均不横向溢出；桌面与 390px 移动端截图确认观感。根模块 `go test ./...`、`go vet`、管理端 `go test ./...` 通过；已重建 `sitegen.exe` 并重新生成 `dist`。前端 `node --test` 仍因本机 Node v24 `vm` 无 `fetch` 整体报错（既有环境问题）。
+
+## 隐藏“最低充值金额需登录查看”类字样（2026-11-08）
+
+用户要求：不显示起充价格的平台，卡片上不再出现“最低充值金额需登录查看”这类字样（但保留支付方式与核对日期）。
+
+- `generate.go`：新增 `noPublicDeposit(note)`，含“需登录/未公开/无公开充值说明/以购买 credits 页为准/以官网充值页为准/按所选支付方式显示/取决于/查询限额”等占位词即视为“无确切起充数值”，组装 `channelJS` 时把 `d` 置空；有确切金额、免费号、按单支付的照常显示。
+- `web/app.js`：`depositNote` 改为 `c.d` 为空但有支付方式时，仍渲染“可用 …  · 核对”，只是不显示起充那句；`c.d` 与支付方式都空则整条不显示。
+- `data/catalog.json`：Tiger SMS/SMSPVA 去掉“需登录查看”前缀，只留渠道限定数值（1000 RUB / 5 USD）；Textverified 改为“公开预设最低 $25 起（官网未标为最低）”。其余 8 家无数值占位保持原数据，由生成侧隐藏。
+- 生成结果核对：`dist/rows.json` 的 `channels` 中 8 家（haozhuma/herosms/onlinesim/sms-man/smsak/smsfast/smspool/sv-number）`d` 为空、支付方式保留；全站无一条含“需登录查看”字样。
+- 新增 `TestNoPublicDeposit`（隐藏 6 例、显示 7 例）；根模块 `go test ./...`、`go vet ./...`、管理端 `go test ./...` 通过；已重建 `sitegen.exe` 并重新生成 `dist`。前端 `node --test` 仍因本机 Node v24 下 `vm` 无 `fetch` 整体报错（既有环境问题），另用 `new Function` 抽取 `depositNote` 单测确认渲染：隐藏平台显示“可用 … · 核对”、无支付方式时不显示。
+
+## 最低充值：官网文档二轮复核，补渠道限定数值（2026-11-08）
+
+用户反馈仍有大量平台把最低充值写成“需登录查看”。对仍标“需登录查看/需登录”的 10 家（SMS-Man、Tiger SMS、SMSPVA、SMSAK、SV Number、SMSFAST、Textverified、SMSPool、OnlineSIM、豪猪）逐一查官网文档/FAQ/条款（仅平台自有域名，不用第三方/博客数字）。
+
+- 结论：**10 家均无平台级公开起充数值**，具体金额只在登录后充值页出现。仅两条“渠道限定”原文明示数值，已写入 `deposit_note` 并注明限定条件（非统一门槛）：Tiger SMS AnyPay/SBP 最低 1000 RUB（[博客原文](https://tiger-sms.com/blog/how-to-top-up-balance-on-tiger-sms)）；SMSPVA 尼日利亚银行卡最低 5 USD（[新闻页](https://smspva.com/news/635-expanded-credit-card-payment-options-now-available.html)）。
+- 修正陷阱：SMSFAST 的 `$10` 是**忠诚等级门槛**非最低充值；Textverified 的 `$25` 是 Buy Credits 预设、官网未称“最低”；SMS-Man FAQ 答“取决于支付方式”；SMSPool 首页预填 `10.00` 是默认值非最低——均未当作起充数值。
+- `data/catalog.json`：更新 8 家 `deposit_note` 表述（数值不变者仅补明限定/来源），删除 `smsak.sources` 中误挂的 SV Number FAQ 链接（`sms-verification-number.com/en/faq`）。`payment_verified` 保持 2026-11-08。
+- 验证：`catalog.Validate()` 与根模块 `go test ./...`、`go vet ./...` 通过（含 `TestProviderPaymentFacts`）；重新生成 `dist` 并在 `rows.json` 的 `channels` 确认新文案。前端 `node --test` 因本机 Node v24 下 `vm` 上下文无 `fetch`（`app.js` 已改用 `fetch` 拉 `rows.json`）整体报 `ReferenceError: fetch is not defined`，属既有测试夹具环境问题、与本次数据改动无关（未改 `app.js`/测试）。未登录任何账户、未进登录后充值页核对。
+
 ## 最低充值与支付方式“需登录查看”修复（2026-11-08）
 
 用户反馈部分平台的最低充值与支付方式都只写“需登录查看”。逐个打开官网复核后确认根因在数据：这两件事被合并成一句，实际上只有**起充金额**需要登录，支付方式大多在官网公开页就能查到。

@@ -13,15 +13,54 @@
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const countryLabel = r => r.c && r.c !== '未知' ? r.c : (r.ok === 'starting' ? '跨国起价（国家未指定）' : '国家未注明');
   const offerLabel = k => ({exact:'具体报价',starting:'公开起价',unknown:'价格待核实',login:'登录官网查看价格'}[k] || '价格待核实');
-  // Channel-level recharge facts, rendered as small print in the card's bottom-right.
-  // Payment methods unknown: point at the provider's own page instead of guessing.
-  const depositNote = r => {
-    const c = channels[r.pi];
-    if (!c || !c.d) return '';
-    const pay = c.pm && c.pm.length ? ' · 可用 ' + esc(c.pm.join(' / ')) : ' · 支付方式以官网注册登录后的充值页为准';
-    const link = c.pm && c.pm.length ? '' : ` · <a href="${esc(channelURL(r.pi))}" target="_blank" rel="noopener noreferrer">官网</a>`;
-    return `<p class="c-deposit">${esc(c.d)}${pay}${link}${c.v ? ' · ' + esc(c.v) + ' 核对' : ''}</p>`;
+  // Channel-level recharge facts, shown once in a dropdown next to the results
+  // header (not on every card). Amount is c.d (already hidden upstream when it
+  // only says "needs login"); empty means the site has no public amount.
+  const depositRow = (name, c, url) => {
+    const amount = c.d ? esc(c.d) : '官网未公开（登录充值页查看）';
+    const pay = c.pm && c.pm.length ? esc(c.pm.join(' / ')) : '官网注册登录后充值页查看';
+    const link = c.pm && c.pm.length ? '' : (url ? ` · <a href="${esc(url)}" target="_blank" rel="noopener noreferrer">官网</a>` : '');
+    return `<div class="deposit-item"><div class="deposit-item-name">${esc(name)}</div>` +
+      `<div class="deposit-item-body"><span class="deposit-amt">起充：${amount}</span>` +
+      `<span class="deposit-pay">支付方式：${pay}${link}</span>` +
+      (c.v ? `<span class="deposit-ver">${esc(c.v)} 核对</span>` : '') + `</div></div>`;
   };
+  function renderDepositDropdown() {
+    const box = document.querySelector('#deposit-list');
+    if (!box) return;
+    const seen = new Set();
+    const parts = [];
+    for (const r of rows) {
+      if (seen.has(r.pi)) continue;
+      seen.add(r.pi);
+      const c = channels[r.pi];
+      if (!c) continue;
+      parts.push(depositRow(r.p, c, channelURL(r.pi)));
+    }
+    box.innerHTML = parts.join('');
+    positionDepositPanel();
+  }
+  // The dropdown can sit anywhere along the header, so clamp its panel inside
+  // the viewport instead of letting it overflow (CSS alone can't clamp both sides).
+  function positionDepositPanel() {
+    const dd = document.querySelector('#deposit-dropdown');
+    if (!dd) return;
+    const panel = dd.querySelector('.deposit-panel');
+    if (!panel) return;
+    panel.style.left = '';
+    const r = panel.getBoundingClientRect();
+    if (!r.width) return; // hidden while <details> closed
+    const pad = 12;
+    if (r.right > window.innerWidth - pad) {
+      panel.style.left = (window.innerWidth - pad - r.width - r.left) + 'px';
+    }
+    if (parseFloat(panel.style.left || '0') + r.left < pad) {
+      panel.style.left = (pad - r.left) + 'px';
+    }
+  }
+  const ddEl = document.querySelector('#deposit-dropdown');
+  if (ddEl) ddEl.addEventListener('toggle', () => { if (ddEl.open) positionDepositPanel(); });
+  window.addEventListener('resize', () => { if (ddEl && ddEl.open) positionDepositPanel(); });
   const channelURL = pi => (rows.find(row => row.pi === pi) || {}).h || '';
 
   // ---- Data source: compact rows loaded asynchronously from rows.json (keeps
@@ -57,6 +96,7 @@
       const k = r.pi + '|' + r.s;
       (byChannel[k] || (byChannel[k] = [])).push(r);
     }
+    renderDepositDropdown();
   }
   const PAGE = 60;
   let shown = 0, matched = [];
@@ -138,7 +178,6 @@
         `<p class="muted">价格与库存以官网为准。${stale ? '资料已过维护周期，待更新。' : ''}</p>` +
         `<p class="stamp">对象采集 ${esc(r.ca)} · <a href="${esc(r.os)}" target="_blank" rel="noopener noreferrer">对象来源</a></p>` +
         `<a class="btn" data-purchase="${esc(r.pi)}" href="${esc(r.h)}" target="_blank" rel="noopener noreferrer${sponsored}">前往渠道官网</a>` +
-        depositNote(r) +
         `</article>`;
     }
     const price = r.priced
@@ -173,7 +212,6 @@
       `<p>官网可能需要重新选择服务、国家和租期。${r.iv ? '本购买入口含管理员邀请信息。' : ''}</p>` +
       (r.ora ? `<p>续费原价 ${esc(r.ora)} ${esc(r.oc)}；美元金额按 ${esc(rateDate)} 汇率折算。</p>` : '') +
       `<ul>${(r.ps || []).map(u => `<li><a href="${esc(u)}" target="_blank" rel="noopener noreferrer">产品规则来源：${esc(u)}</a></li>`).join('')}${r.os ? `<li><a href="${esc(r.os)}" target="_blank" rel="noopener noreferrer">报价来源</a></li>` : ''}</ul></details>` +
-      depositNote(r) +
       `</article>`;
   }
   function kindLabel(k) { return k === 'free' ? '免费公共号码' : k === 'once' ? '一次性接码' : k === 'rental' ? '可续费号码' : '产品类型待核实'; }
@@ -373,6 +411,22 @@
     render();
   }
   ledgerMore.addEventListener('click', appendPage);
+
+  // Cards per row: user-selectable, remembered in localStorage. The ledger grid
+  // reads the data-per-row attribute; unset/3 uses the CSS default.
+  const perRowSel = document.querySelector('#per-row');
+  const applyPerRow = n => { if (ledger) ledger.dataset.perRow = String(n); };
+  if (perRowSel) {
+    let saved = '3';
+    try { saved = localStorage.getItem('perRow') || '3'; } catch { }
+    if (![...perRowSel.options].some(o => o.value === saved)) saved = '3';
+    perRowSel.value = saved;
+    applyPerRow(saved);
+    perRowSel.addEventListener('change', () => {
+      applyPerRow(perRowSel.value);
+      try { localStorage.setItem('perRow', perRowSel.value); } catch { }
+    });
+  }
 
   // Channel offer preview: open a searchable list of every offer for one provider+service.
   const modal = document.querySelector('#chan-modal');

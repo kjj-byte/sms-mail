@@ -52,6 +52,31 @@
 
 Textverified、SMSPool 与豪猪仍标“需登录”：前两者公开 FAQ 只有支付方式没有起充金额，豪猪官网没有任何公开充值/支付说明。
 
+### 2026-11-08 二轮：再查官网文档补起充数值（仍无平台级公开数值）
+
+第二轮针对仍标“需登录查看”的 10 家逐一查官网文档/FAQ/条款，结论：**均无平台级公开起充数值**，具体金额只在登录后充值页出现。只找到两条“渠道限定”的原文明示数值，已在 `deposit_note` 注明限定条件（非平台统一门槛）：
+
+| 平台 | 官网原文明示（限渠道） | 依据 |
+| --- | --- | --- |
+| Tiger SMS | AnyPay/SBP 渠道最低 **1000 RUB** | [博客原文](https://tiger-sms.com/blog/how-to-top-up-balance-on-tiger-sms)：“Payment via AnyPay \| SBP Only … the minimum payment amount is 1000 rubles.” |
+| SMSPVA | 尼日利亚银行卡（Bankcard NG）最低 **5 USD** | [新闻页原文](https://smspva.com/news/635-expanded-credit-card-payment-options-now-available.html)：“Bankcard NG (Nigeria Only) … (Minimum amount: 5 USD).” |
+
+以下仍无公开数值（`deposit_note` 保留“需登录/未公开”，不臆测）：
+
+- **SMS-Man**：官网 FAQ 直接答“最低充值金额取决于支付方式”（[`/cn/help`](https://sms-man.com/cn/help) 问答），不公布数额；整站 Cloudflare 403。
+- **SV Number**：FAQ 只说“充值页选支付方式后填写金额”，无最低额；条款 §12.11 的“Minimum SMS reception rate”是送达率规则，非充值门槛。
+- **SMSFAST**：FAQ 唯一 `$10` 是**忠诚等级门槛**（每周充 $10 得状态），不是最低充值，不能当起充写。
+- **SMSAK**：官网只写 USDT（TRC20/ERC20），无起充额；余额页登录后才有。
+- **Textverified**：Buy Credits 公开预设从 **$25** 起，但官网未称其为“最低”（`/products`）；真正充值页登录后。
+- **SMSPool**：首页充值组件预填 `10.00` 是默认值、未标最低；`/balance/deposit` 需登录。
+- **OnlineSIM / 豪猪**：条款/落地页均无金额，充值页登录后才有。
+
+核对不写真实账户、不进登录后充值页；上表数值均取自各自官网公开页面原文。
+
+**页面显示**：无确切起充数值的平台（`deposit_note` 仅为“需登录查看/未公开/以充值页为准”等占位），卡片右下角**不再显示起充这句**，只保留支付方式与核对日期；有确切金额（含渠道限定）、免费号、按单支付的照常显示。判定见 `generate.go` 的 `noPublicDeposit`。
+
+**展示位置**：所有渠道的起充与支付方式不再逐卡显示，改为「实时比价结果」标题右侧的「💰 各渠道起充」下拉信息框集中展示（每平台一行：起充 / 支付方式 / 核对日期），避免卡片过长。无数值平台在该框内标注“官网未公开（登录充值页查看）”。
+
 OnlineSIM 复核：已移除未找到官网依据的“手机话费余额”。[官网使用说明](https://onlinesim.io/ru/free_numbers/georgia)列出 Visa/Mastercard、Alipay、GCash、Payeer、Perfect Money；[支付条款第 4.1 节](https://onlinesim.io/documentation/offer)另说明银行转账和平台提供的数字资产支付。[充值操作说明](https://onlinesim.io/instructions/how-to-create-wechat-account-without-phone-number-onlinesimio)要求登录后从 Balance → Refill 选择方式和金额。未查到公开的最低充值数值；访问 `/v2/en/payment` 跳转到登录页后返回 403，因此页面明确标为“最低充值金额未公开核实”，不把推广提现门槛或号码单价当作充值门槛。已将这三个官方依据加入渠道 `sources`。
 
 ## 邮箱：本机管理服务原生提供的 9 个免费渠道

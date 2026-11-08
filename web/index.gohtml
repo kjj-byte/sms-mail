@@ -217,9 +217,25 @@
               <div class="board-title-group">
                 <h2>实时比价结果</h2>
                 <span id="count" class="count-badge" role="status">{{len .Rows}} 条渠道记录</span>
+                <details class="deposit-dropdown" id="deposit-dropdown">
+                  <summary class="deposit-summary" aria-label="各渠道起充与支付信息">💰 各渠道起充</summary>
+                  <div class="deposit-panel">
+                    <p class="deposit-panel-hint">各渠道公开的最低保充值（起充）与支付方式；标注“官网未公开”者需登录官网充值页查看。金额均为渠道官网公开说明，未逐一登录账户核实。</p>
+                    <div class="deposit-list" id="deposit-list"></div>
+                  </div>
+                </details>
               </div>
               <div class="board-note">
                 <span>⚡ 公开资源价不等于实际到手价 · “≈”表示汇率折算参考值 · 交易在对应官网完成</span>
+                <label class="per-row-control" title="每行显示多少张报价卡片">
+                  <span>每行</span>
+                  <select id="per-row" aria-label="每行卡片数量">
+                    <option value="2">2 张</option>
+                    <option value="3" selected>3 张</option>
+                    <option value="4">4 张</option>
+                    <option value="5">5 张</option>
+                  </select>
+                </label>
               </div>
             </div>
 
