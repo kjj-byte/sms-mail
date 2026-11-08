@@ -22,6 +22,15 @@ SMSFAST 没有匿名价格 API：采集器读取官网公开起价（当前 “F
 
 价格采集不在管理界面触发；使用 `update-prices.cmd`、`watch-prices.cmd` 或已安装的每日任务。公开部署的 `dist` 与管理端预览都不含采集按钮。
 
+## 向使用者同步报价（gh-pages 发布）
+
+`dist/index.html` 是自包含的单文件（报价数据内嵌，无外部请求、无需 key）。每日任务 `SMSNav-DailyPrices` 通过 `update-and-publish.cmd` 先更新价格，再由 `publish-dist.ps1` 把 `dist/index.html` 发布到 `gh-pages` 分支：
+
+- `gh-pages` 只保留一份快照（每次强制覆盖，不累积 10MB 历史），内含 `index.html` 与 `.nojekyll`。
+- 使用者可下载该文件直接打开，或在仓库 Settings → Pages 选择 `gh-pages` 分支，得到固定 URL。
+- 需先配置远端：`git remote add origin <仓库地址>`；发布脚本复用主仓库的 git 身份与远端。
+- 主仓库的 `/dist/` 仍被忽略，发布发生在临时工作树，不污染 master。
+
 - `provider_keys`：独立平台密钥文件，相对本配置目录解析；真实文件不提交。
 - `web_prices`：网页登录快照路径；不存在或超过 48 小时时跳过，不阻塞公开 API 采集。
 - `price_targets`：重点对象保留分国家报价；SMS4Sats 对全目录询价，该字段仅影响优先顺序。Textverified 的详情页暂仍按重点对象读取。「其他/未列出 (Any Other)」不受该列表限制，始终保留分国家报价。
