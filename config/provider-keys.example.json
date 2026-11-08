@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "providers": {
+    "sms-man": {"api_key": "", "currency": ""},
+    "tiger-sms": {"api_key": "", "currency": ""},
+    "grizzlysms": {"api_key": "", "currency": ""}
+  }
+}

@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="选择接码对象与国家，对比各平台公开价格、时长与退款规则，前往对应平台官网办理。">
+<title>identity · SMS 比价与多渠道临时邮箱 | 聚合 {{len .Targets}} 个接码对象</title>
+<link rel="stylesheet" href="styles.css">
+<script src="app.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#results">跳到报价结果</a>
+
+<div class="app-shell">
+  <!-- 现代应用顶栏 -->
+  <header class="app-header">
+    <div class="header-left">
+      <a class="app-brand" href="./">
+        <span class="brand-glyph">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m13 2-2 10h8L7 22l2-10H1z"/></svg>
+        </span>
+        <span class="brand-text">identity</span>
+        <span class="brand-version">v2.0 UI</span>
+      </a>
+      <nav class="app-nav-tabs" aria-label="核心服务切换">
+        <button id="sms-tab" type="button" class="nav-tab-btn" aria-pressed="true" aria-controls="sms-view">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <span>SMS 比价行情</span>
+        </button>
+        <button id="mail-tab" type="button" class="nav-tab-btn" aria-pressed="false" aria-controls="mail-view">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+          <span>多渠道邮箱</span>
+        </button>
+      </nav>
+    </div>
+
+    <div class="header-right">
+      <div class="system-stats-pill" title="全站实时汇聚状态">
+        <span class="pulse-indicator"></span>
+        <span class="stats-text">{{.Count}} 渠道已接入 · {{len .Targets}} 接码对象</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主视图区 -->
+  <div class="app-main-content">
+    
+    <!-- 1. SMS 短信比价视图 -->
+    <div id="sms-view">
+      {{if .PriceUpdate}}<details class="collect-dropdown"><summary>采集范围与时间（最近：{{.PriceUpdate.AttemptedAt}}）</summary>
+        <div class="collect-panel">
+          <p>拉取 {{.PriceUpdate.UpdatedServices}} 条渠道对象记录、{{.PriceUpdate.UpdatedOffers}} 条有效报价，{{len .PriceUpdate.Failures}} 个来源失败。更新周期 24 小时。</p>
+          {{if .PriceUpdate.Sources}}<div class="collection-table"><table><caption>渠道对象与价格采集情况</caption><thead><tr><th scope="col">渠道</th><th scope="col">已拉取对象</th><th scope="col">本轮有价对象</th><th scope="col">报价条数</th><th scope="col">逐国完成</th></tr></thead><tbody>{{range .PriceUpdate.Sources}}<tr><th scope="row">{{.Name}}</th><td>{{.ListedTargets}}</td><td>{{.PricedTargets}}</td><td>{{.Quotes}}</td><td>{{if .CountriesExpected}}{{.CountriesRead}} / {{.CountriesExpected}}{{else}}未逐国统计{{end}}</td></tr>{{end}}</tbody></table></div>{{end}}
+          {{if .PriceUpdate.Failures}}<details><summary>未成功更新的来源</summary><ul>{{range .PriceUpdate.Failures}}<li>{{.Provider}}：{{.Reason}}</li>{{end}}</ul></details>{{end}}
+          {{if .PriceUpdate.PriceWarnings}}<details><summary>对象已取得但价格不完整</summary><ul>{{range .PriceUpdate.PriceWarnings}}<li>{{.Provider}}：{{.Reason}}</li>{{end}}</ul></details>{{end}}
+        </div>
+      </details>{{end}}
+
+      <!-- 快速热门服务直达胶囊 -->
+      <div class="quick-tags-strip" aria-label="热门接码对象快速筛选">
+        <span class="quick-label">热门直达:</span>
+        <div class="quick-chips">
+          <button type="button" class="quick-chip" data-search="Google" aria-pressed="false">Google</button>
+          <button type="button" class="quick-chip" data-search="Telegram" aria-pressed="false">Telegram</button>
+          <button type="button" class="quick-chip" data-search="WeChat" aria-pressed="false">WeChat</button>
+          <button type="button" class="quick-chip" data-search="OpenAI" aria-pressed="false">GPT</button>
+          <button type="button" class="quick-chip" data-search="Claude" aria-pressed="false">Claude</button>
+        </div>
+      </div>
+
+      <!-- 工作台核心分割布局 -->
+      <div class="workbench-layout">
+        
+        <!-- 左侧：接码对象探索器 -->
+        <aside class="target-explorer" aria-label="接码对象探索器">
+          <div class="explorer-header">
+            <div class="explorer-title-row">
+              <h3>接码对象库</h3>
+              <span class="explorer-counter">{{len .Targets}} 个对象</span>
+            </div>
+            <div class="explorer-search-box">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input id="obj-search" type="search" placeholder="搜索接码对象 (如 wechat, telegram)..." aria-label="搜索接码对象" autocomplete="off">
+            </div>
+          </div>
+
+          <div class="explorer-body">
+            <ul id="obj-list" class="obj-list" aria-label="全部接码对象"></ul>
+            <button id="obj-more" class="obj-more" type="button" hidden>加载更多对象</button>
+            <script type="application/json" id="obj-data">{{toJSON .Targets}}</script>
+          </div>
+        </aside>
+
+        <!-- 右侧：行情与比价中心 -->
+        <main class="quotation-center">
+          
+          <!-- 筛选控制台 -->
+          <div class="filter-console-card">
+            <form id="filters" hidden aria-label="筛选报价">
+              <div class="filter-main-bar">
+                
+                <!-- 关键词搜索 (带自动补全) -->
+                <label class="filter-cell filter-cell-search autocomplete-wrap">
+                  <span class="cell-label">对象关键词</span>
+                  <div class="input-with-icon">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    <input id="filter-q" name="q" type="search" placeholder="如 Google、Telegram（输入 wechat 可搜出 WeChat）" maxlength="120" autocomplete="off" aria-autocomplete="list" aria-controls="q-suggest" aria-expanded="false">
+                  </div>
+                  <ul id="q-suggest" class="suggest" role="listbox" hidden></ul>
+                </label>
+
+                <!-- 主区 -->
+                <label class="filter-cell filter-cell-area">
+                  <span class="cell-label">主区</span>
+                  <select name="area">
+                    <option value="">免费与付费全选</option>
+                    <option value="free">仅免费公共号码</option>
+                    <option value="paid">仅付费独享号码</option>
+                    <option value="unknown">类型待核实</option>
+                  </select>
+                </label>
+
+                <!-- 国家下拉 -->
+                <label class="filter-cell filter-cell-country">
+                  <span class="cell-label">目标国家 / 线路</span>
+                  <select name="country">
+                    <option value="">全部国家 / 全球起价</option>
+                  </select>
+                </label>
+
+                <!-- 付费栏目 -->
+                <label class="filter-cell filter-cell-kind">
+                  <span class="cell-label">付费栏目</span>
+                  <select name="kind">
+                    <option value="">全部产品类型</option>
+                    <option value="once">一次性号码</option>
+                    <option value="rental">可续费号码</option>
+                  </select>
+                </label>
+
+                <!-- 排序方式 -->
+                <label class="filter-cell filter-cell-sort">
+                  <span class="cell-label">排序方式</span>
+                  <select name="sort">
+                    <option value="price_asc">价格从低到高</option>
+                    <option value="price_desc">价格从高到低</option>
+                    <option value="group">按渠道条件分组</option>
+                  </select>
+                </label>
+
+                <div class="filter-actions">
+                  <button class="filter-reset-btn" type="reset">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                    <span>重置</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- 高级过滤收纳抽屉 (接码对象、渠道、租期、退款) -->
+              <details class="advanced-filter-drawer">
+                <summary class="advanced-summary">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                  <span>更多过滤选项 (接码对象、渠道平台、租期、退款保障)</span>
+                  <span class="advanced-arrow">▾</span>
+                </summary>
+                <div class="advanced-filter-grid">
+                  <label class="adv-cell">
+                    <span>接码对象</span>
+                    <select name="service">
+                      <option value="">全部已拉取对象</option>
+                    </select>
+                  </label>
+                  <label class="adv-cell">
+                    <span>渠道平台</span>
+                    <select name="provider">
+                      <option value="">全部渠道</option>
+                    </select>
+                  </label>
+                  <label class="adv-cell">
+                    <span>号码租期</span>
+                    <select name="term">
+                      <option value="">全部租期套餐</option>
+                      <option value="1 day">1 天</option>
+                      <option value="7 days">7 天</option>
+                      <option value="15 days">15 天</option>
+                      <option value="30 days">30 天</option>
+                      <option value="90 days">90 天</option>
+                      <option value="360 days">360 天</option>
+                      <option value="1 month">1 个月（非固定 30 天）</option>
+                    </select>
+                  </label>
+                  <label class="adv-cell">
+                    <span>未收码退款保障</span>
+                    <select name="refund">
+                      <option value="">全部退款政策</option>
+                      <option value="refundable">未收码可退</option>
+                      <option value="nonrefundable">不可退</option>
+                      <option value="conditional">有条件</option>
+                      <option value="unknown">待核实</option>
+                      <option value="conflicting">资料冲突，官网确认</option>
+                      <option value="na">免费，不适用</option>
+                    </select>
+                  </label>
+                </div>
+              </details>
+
+              <div class="filter-status-row">
+                <p id="selected" class="selected-tags"></p>
+                <p class="muted hint" style="font-size:11px;color:var(--text-dim);margin-top:4px;">选择国家后仅显示明确标注该国的记录。“跨国起价”是本站收录的跨国最低公开起价，可能由逐国报价汇总，不代表某个国家可用。“价格从低到高/从高到低”按价格整体排序（同产品类型、同币种内，未标价的后置）；“默认分组”按渠道、产品类型、币种、租期、计费单位、号码类型、适用范围及起价/具体报价分组。</p>
+              </div>
+            </form>
+          </div>
+
+          <!-- 报价行情列表看板 -->
+          <section class="quotation-board" id="results">
+            <div class="board-header">
+              <div class="board-title-group">
+                <h2>实时比价结果</h2>
+                <span id="count" class="count-badge" role="status">{{len .Rows}} 条渠道记录</span>
+              </div>
+              <div class="board-note">
+                <span>⚡ 公开资源价不等于实际到手价 · “≈”表示汇率折算参考值 · 交易在对应官网完成</span>
+              </div>
+            </div>
+
+            <p id="notice" role="status" class="status-notice"></p>
+            <noscript><p class="status-notice">报价筛选与卡片需要启用 JavaScript。可先浏览下方待核实平台入口；完整报价数据保存在页面内。</p></noscript>
+            <p id="empty" class="empty-state" hidden>
+              <span>没有匹配的渠道记录。可清空关键词或更换接码对象；未成功拉取的来源不代表不支持该对象。</span>
+            </p>
+
+            <!-- 卡片渲染流容器 -->
+            <div class="ledger-container" id="ledger" aria-live="polite"></div>
+            
+            <div class="ledger-footer">
+              <button id="ledger-more" class="ledger-more-btn" type="button" hidden>加载更多报价</button>
+            </div>
+            
+            <script type="application/json" id="rows-data">{{.RowsJSON}}</script>
+          </section>
+
+          <!-- 待核实与说明折叠模块 -->
+          <div class="auxiliary-sections">
+            <section id="pending">
+              <h2 style="font-size:16px;font-weight:700;margin-bottom:4px;">产品资料待核实</h2>
+              <p style="font-size:12px;color:var(--text-muted);">只有平台级资料的入口保留在此，不猜测单次或租赁套餐。</p>
+              <div class="pending-list">
+                {{range .Pending}}
+                <div class="pending">
+                  <h3>{{.Provider.Name}}</h3>
+                  <p>{{.Provider.Note}}</p>
+                  <a data-purchase="{{.Provider.ID}}" href="{{.Purchase}}" target="_blank" rel="noopener noreferrer">查看平台官网</a>
+                  <details style="margin-top:6px;font-size:11px;"><summary style="cursor:pointer;color:var(--text-muted);">来源与核验日期</summary><p>{{.Provider.Verified}}</p>{{range .Provider.Sources}}<p><a href="{{.}}" target="_blank" rel="noopener noreferrer">{{.}}</a></p>{{end}}</details>
+                </div>
+                {{end}}
+              </div>
+            </section>
+
+            <section class="about" id="about" style="margin-top:2rem;">
+              <h2 style="font-size:16px;font-weight:700;margin-bottom:4px;">接码对象与渠道聚合，业务在官网完成</h2>
+              <div class="about-grid">
+                <div><h3>不涉及支付</h3><p>本站只比较公开资料与价格，注册、付款、取号、收码、退款和续费都在对应平台官网办理。</p></div>
+                <div><h3>数据来自公开来源</h3><p>免费号码短信公开可见；价格按各条采集时间记录，非实时报价。非美元价格同时展示原价与带汇率日期的美元参考值；实际结算可能另加服务费/手续费。未知项及资料冲突明确标注。</p></div>
+                <div><h3>关于邀请链接</h3><p>部分购买入口可能包含邀请信息，不影响排序。最终价格、库存与退款资格以对应官网为准。</p></div>
+              </div>
+            </section>
+          </div>
+
+        </main>
+      </div>
+
+      <!-- 渠道全部国家报价弹窗 -->
+      <dialog id="chan-modal" class="modal" aria-labelledby="chan-title">
+        <div class="modal-backdrop" data-close></div>
+        <div class="modal-panel">
+          <div class="modal-head">
+            <div class="modal-head-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <h3 id="chan-title">渠道全部国家报价</h3>
+            </div>
+            <button type="button" class="modal-x" data-close aria-label="关闭">✕</button>
+          </div>
+          <div class="modal-search-wrap">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input id="chan-search" type="search" class="modal-search" placeholder="按国家名称或价格搜索，如 美国、0.1..." aria-label="搜索渠道报价" autocomplete="off">
+          </div>
+          <p id="chan-count" class="modal-count-status"></p>
+          <div id="chan-list" class="chan-list"></div>
+        </div>
+      </dialog>
+
+      <footer class="app-footer">
+        <p>identity / 公开渠道资料，无第三方跟踪 · 交易在官网完成 · 换算价仅供参考，可能不含服务费，以官网结算为准</p>
+      </footer>
+    </div>
+
+    <!-- 2. 多渠道邮箱视图 -->
+    <main id="mail-view" hidden>
+      <div class="mail-app-container">
+        
+        <!-- 邮箱顶栏与创建抽屉 -->
+        <header class="mail-hero-bar">
+          <div class="mail-hero-info">
+            <div class="mail-badge-tag">MAIL HUB</div>
+            <h1>多渠道临时邮箱工作台</h1>
+            <p>内置 9 个主流免费临时邮箱渠道，支持自定 IMAP 绑定与全自动无缝收件。</p>
+          </div>
+          <div class="mail-hero-status">
+            <span class="mail-status-dot" aria-hidden="true"></span>
+            <p id="mail-status" role="status" aria-live="polite">打开邮箱后连接本机服务。</p>
+            <p id="mail-overview" class="sr-only" hidden>正在连接邮箱服务</p>
+            <label class="auto-poll-switch">
+              <input id="mail-auto" type="checkbox" checked>
+              <span>自动收件轮询</span>
+            </label>
+          </div>
+        </header>
+
+        <!-- 接入与创建面板 -->
+        <details id="mail-composer" class="mail-composer-card" open>
+          <summary class="composer-summary">
+            <div class="composer-summary-left">
+              <span class="composer-icon">＋</span>
+              <span class="composer-title">创建临时邮箱 / 接入已有私人邮箱</span>
+            </div>
+            <span class="composer-hint">展开/收起配置</span>
+          </summary>
+          <form id="mail-create" class="mail-create-form" aria-label="新建或接入邮箱">
+            <fieldset id="mail-controls" disabled>
+              <legend class="sr-only">邮箱配置</legend>
+              <div class="mail-modes-strip" role="group" aria-label="邮箱接入方式">
+                <button id="mail-mode-create" type="button" aria-pressed="true">免费临时邮箱 (9个渠道)</button>
+                <button id="mail-mode-attach" type="button" aria-pressed="false">接入已有邮箱 (IMAP / 私人)</button>
+              </div>
+              <div class="mail-inputs-row">
+                <div class="mail-field-item">
+                  <label>用途 / 目标服务域名</label>
+                  <input name="for" placeholder="如 github.com, twitter.com" required maxlength="253" autocomplete="off">
+                </div>
+                <div id="mail-create-fields" class="mail-fields-group">
+                  <div class="mail-field-item">
+                    <label>指定渠道平台</label>
+                    <select name="provider"><option value="">自动调度最佳可用渠道</option></select>
+                  </div>
+                  <div class="mail-field-item">
+                    <label>指定域名 (可选)</label>
+                    <input name="domain" maxlength="253" placeholder="留空使用渠道默认随机域名">
+                  </div>
+                </div>
+                <div id="mail-attach-fields" class="mail-fields-group" hidden>
+                  <div class="mail-field-item">
+                    <label>完整邮箱地址</label>
+                    <input name="address" type="email" maxlength="254" placeholder="user@example.com" autocomplete="off" disabled>
+                  </div>
+                  <div class="mail-field-item">
+                    <label>应用授权码 / 专用密码</label>
+                    <input name="password" type="password" maxlength="200" autocomplete="off" placeholder="IMAP 授权码" disabled>
+                  </div>
+                  <div class="mail-field-item">
+                    <label>IMAP 服务器 (可选)</label>
+                    <input name="imapHost" maxlength="253" autocomplete="off" placeholder="留空按域名自动推导" disabled>
+                  </div>
+                </div>
+              </div>
+              <div class="mail-form-submit-row">
+                <p id="mail-mode-hint" class="mail-mode-hint">自动调度将依次按响应速度调度各渠道创建信箱。</p>
+                <div class="mail-form-btns">
+                  <button id="mail-dispatch" type="button" class="btn-secondary">查看调度顺序</button>
+                  <button id="mail-submit" type="submit" class="btn-primary">立即创建信箱 →</button>
+                </div>
+              </div>
+              <p id="mail-attach-hint" class="muted" hidden></p>
+              <pre id="mail-dispatch-result" class="mail-text" hidden></pre>
+            </fieldset>
+          </form>
+        </details>
+
+        <!-- 现代化 3 栏沉浸式邮件工作台 -->
+        <section class="mail-three-columns-workspace" aria-label="邮箱三栏工作区">
+          
+          <!-- 列 1: 邮箱列表 -->
+          <aside class="col-mailboxes" aria-label="邮箱列表">
+            <div class="col-header">
+              <div class="col-title">
+                <h3>信箱列表</h3>
+                <span id="mail-inbox-count" class="badge-count">0</span>
+              </div>
+              <button id="mail-reload" type="button" class="col-icon-btn" disabled title="刷新信箱">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+              </button>
+            </div>
+            <div class="col-search">
+              <input id="mail-search" class="mail-search-input" type="search" placeholder="搜索信箱地址或渠道..." autocomplete="off">
+            </div>
+            <div class="col-filters">
+              <select id="mail-filter" aria-label="邮箱状态">
+                <option value="all">全部信箱</option>
+                <option value="active">有效活跃</option>
+                <option value="expired">已过期</option>
+                <option value="closed">已关闭</option>
+              </select>
+              <select id="mail-group" aria-label="分组方式">
+                <option value="state">按状态分组</option>
+                <option value="provider">按渠道分组</option>
+              </select>
+            </div>
+            <div id="mail-inboxes" class="mailboxes-scroller"></div>
+          </aside>
+
+          <!-- 列 2: 邮件消息摘要列表 -->
+          <section class="col-messages" aria-label="收件列表">
+            <div class="col-header">
+              <div class="col-title">
+                <h3>收到邮件</h3>
+                <span id="mail-message-count" class="badge-count">0</span>
+              </div>
+              <button id="mail-refresh" type="button" class="btn-refresh-mail" disabled>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                <span>立即拉取</span>
+              </button>
+            </div>
+            <div class="active-mailbox-banner">
+              <div class="mailbox-info-row">
+                <h4 id="mail-address">选择或创建邮箱</h4>
+                <div id="mail-actions" class="active-mailbox-actions" hidden>
+                  <button id="mail-copy" type="button" class="action-btn">复制地址</button>
+                  <button id="mail-close" type="button" class="action-btn-danger">销毁</button>
+                </div>
+              </div>
+              <p id="mail-meta" class="mailbox-meta-text">从左侧点击信箱开始收件</p>
+            </div>
+            <div id="mail-messages" class="messages-scroller">
+              <div class="mail-empty">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                <h4>等待接收新邮件</h4>
+                <p>在目标网站填入上方邮箱地址，邮件将即时呈现在此处。</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- 列 3: 邮件正文阅读器与验证码大看板 -->
+          <section class="col-reader" aria-label="邮件阅读">
+            <div class="col-header">
+              <h3>邮件详情</h3>
+              <span class="safe-badge">纯文本安全隔离</span>
+            </div>
+            
+            <!-- 验证码高光提取浮岛 -->
+            <div id="mail-code-panel" class="verification-hero-card" hidden>
+              <div class="hero-code-header">
+                <span class="code-pill-label">⚡ 智能提取验证码</span>
+                <button id="mail-copy-code" type="button" class="copy-code-btn" disabled>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                  <span>一键复制验证码</span>
+                </button>
+              </div>
+              <div id="mail-codes" class="hero-code-display" role="status"></div>
+              <p id="mail-code-source" class="hero-code-source"></p>
+            </div>
+
+            <div id="mail-reader-empty" class="reader-empty-box">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              <h4>未选中任何邮件</h4>
+              <p>在中间列表中点击邮件条目，即可阅读完整正文。</p>
+            </div>
+
+            <div id="mail-reader-content" class="reader-content-body" hidden>
+              <div class="reading-meta-bar">
+                <h2 id="mail-detail-subject" class="reading-subject"></h2>
+                <p id="mail-detail-from" class="reading-from"></p>
+              </div>
+              <pre id="mail-detail" class="reading-pre"></pre>
+            </div>
+          </section>
+
+        </section>
+      </div>
+    </main>
+
+  </div>
+</div>
+
+</body>
+</html>

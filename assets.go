@@ -1,0 +1,6 @@
+package identity
+
+import "embed"
+
+//go:embed web/*
+var assets embed.FS

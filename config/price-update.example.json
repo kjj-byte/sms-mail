@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "baseurl": "",
+  "api_key": "",
+  "model": "",
+  "sources": [
+    {
+      "provider": "fivesim",
+      "product": "fivesim-once",
+      "url": "https://5sim.net/prices",
+      "currency": "USD"
+    },
+    {
+      "provider": "sms-bus",
+      "product": "sms-bus-once",
+      "url": "https://sms-bus.com/"
+    },
+    {
+      "provider": "herosms",
+      "product": "herosms-once",
+      "url": "https://hero-sms.com/cn",
+      "currency": "USD"
+    },
+    {
+      "provider": "textverified",
+      "product": "textverified-once",
+      "url": "https://www.textverified.com/services"
+    },
+    {
+      "provider": "tiger-sms",
+      "product": "tiger-sms-once",
+      "url": "https://tiger-sms.com/"
+    },
+    {
+      "provider": "grizzlysms",
+      "product": "grizzlysms-once",
+      "url": "https://grizzlysms.com/",
+      "currency": "USD"
+    },
+    {
+      "provider": "onlinesim",
+      "product": "onlinesim-once",
+      "url": "https://onlinesim.io/"
+    },
+    {
+      "provider": "smspool",
+      "product": "smspool-once",
+      "url": "https://www.smspool.net/"
+    },
+    {
+      "provider": "sms-man",
+      "product": "sms-man-once",
+      "url": "https://sms-man.com/"
+    },
+    {
+      "provider": "smspva",
+      "product": "smspva-once",
+      "url": "https://smspva.com/",
+      "currency": "USD"
+    },
+    {
+      "provider": "smsak",
+      "product": "smsak-once",
+      "url": "https://sms-acktiwator.ru/ru/",
+      "currency": "USD"
+    },
+    {
+      "provider": "sv-number",
+      "product": "sv-number-once",
+      "url": "https://sms-verification-number.com/en/"
+    },
+    {
+      "provider": "longsms",
+      "product": "longsms-long",
+      "url": "https://longsms.net/api/countries",
+      "currency": "USD"
+    },
+    {
+      "provider": "smsfast",
+      "product": "smsfast-once",
+      "url": "https://smsfast.com/",
+      "currency": "USD"
+    },
+    {
+      "provider": "sms4sats",
+      "product": "sms4sats-once",
+      "url": "https://sms4sats.com/"
+    }
+  ],
+  "analysis_fallback": false,
+  "price_targets": [
+    "Google",
+    "Telegram",
+    "WhatsApp",
+    "OpenAI"
+  ],
+  "provider_keys": "provider-keys.json",
+  "web_prices": "../data/web-prices.json"
+}
