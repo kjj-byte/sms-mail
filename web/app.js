@@ -105,6 +105,12 @@
       (byChannel[k] || (byChannel[k] = [])).push(r);
     }
     renderDepositDropdown();
+    // Populate country/provider selects once rows are loaded. These must run here
+    // (rows are fetched asynchronously from rows.json) — not at module top-level,
+    // where rows is still empty and the dropdowns would only show "全部".
+    options('country', rows.map(r => r.c), { '未知': '国家未指定（含跨国起价）' });
+    options('provider', rows.map(r => r.pi), Object.fromEntries(rows.map(r => [r.pi, r.p])));
+    services();
   }
   const PAGE = 60;
   let shown = 0, matched = [];
@@ -118,8 +124,6 @@
     select.replaceChildren(fragment);
     select.value = unique.includes(current) ? current : '';
   }
-  options('country', rows.map(r => r.c), { '未知': '国家未指定（含跨国起价）' });
-  options('provider', rows.map(r => r.pi), Object.fromEntries(rows.map(r => [r.pi, r.p])));
   const serviceSelect = field('service');
   let serviceChannels = new Map();
   // Keep thousands of native options out of typing/layout work until the dropdown is used.
