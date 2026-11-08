@@ -5,7 +5,7 @@ $config = Join-Path $projectRoot 'config/price-update.json'
 if (!(Test-Path -LiteralPath $updater) -or !(Test-Path -LiteralPath $config)) { throw 'Build the updater and create the local config first.' }
 # The daily task runs update-and-publish.cmd: capture prices, then push dist/index.html to gh-pages.
 $taskRunner = Join-Path $projectRoot 'update-and-publish.cmd'
-if (!(Test-Path -LiteralPath $taskRunner)) { throw '缺少 update-and-publish.cmd。' }
+if (!(Test-Path -LiteralPath $taskRunner)) { throw 'update-and-publish.cmd is missing.' }
 $action = New-ScheduledTaskAction -Execute $taskRunner -WorkingDirectory $projectRoot
 $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddHours(24) -RepetitionInterval (New-TimeSpan -Hours 24)
 $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 30)
