@@ -273,7 +273,7 @@ func publicJSON(ctx context.Context, client *http.Client, p Provider, url string
 	return nil
 }
 
-func collectPublicAPI(ctx context.Context, client *http.Client, p Provider, d *directPrices, focus []string, key string) (bool, error) {
+func collectPublicAPI(ctx context.Context, client *http.Client, p Provider, d *directPrices, focus []string) (bool, error) {
 	if d.product.Kind != "once" && !(p.ID == "longsms" && d.product.Kind == "rental") {
 		return false, nil
 	}
@@ -303,7 +303,7 @@ func collectPublicAPI(ctx context.Context, client *http.Client, p Provider, d *d
 	case "smspva":
 		return true, collectSMSPVA(ctx, client, p, d, focus)
 	case "sms-man":
-		return true, collectSMSMan(ctx, client, p, d, focus, key)
+		return true, collectSMSMan(ctx, client, p, d, focus)
 	case "longsms":
 		return true, collectLongSMS(ctx, client, p, d)
 	}

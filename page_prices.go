@@ -172,7 +172,7 @@ func collectPriceSource(ctx context.Context, client *http.Client, p Provider, d 
 		handled, apiErr = collectAuthenticatedPrices(ctx, client, p, d, cfg)
 	}
 	if !handled {
-		handled, apiErr = collectPublicAPI(ctx, client, p, d, cfg.PriceTargets, cfg.Credentials[p.ID].APIKey)
+		handled, apiErr = collectPublicAPI(ctx, client, p, d, cfg.PriceTargets)
 	}
 	if handled {
 		if apiErr != nil {

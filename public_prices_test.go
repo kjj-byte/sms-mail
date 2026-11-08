@@ -9,9 +9,6 @@ import (
 	"time"
 )
 
-// smsmanPublicKey is a test fixture standing in for the sms-man site key.
-const smsmanPublicKey = "fixture-site-key"
-
 func directFixture(provider string) *directPrices {
 	return newDirect(&Catalog{Services: []Service{{ID: "google", Name: "Google", Aliases: []string{"google", "Google/Gmail"}}, {ID: "telegram", Name: "Telegram", Aliases: []string{"telegram"}}}}, PriceSource{Provider: provider, Product: provider + "-once", URL: "https://example.test/", Currency: "USD"}, Product{ID: provider + "-once", Provider: provider, Kind: "once"}, time.Now())
 }
@@ -73,7 +70,7 @@ func TestLongSMSLongPricesStayExactAndHideOutOfStockCountries(t *testing.T) {
 		t.Fatal("unexpected LongSMS route", r.URL.Path)
 		return nil, nil
 	})}
-	if handled, e := collectPublicAPI(context.Background(), client, p, d, nil, ""); !handled || e != nil {
+	if handled, e := collectPublicAPI(context.Background(), client, p, d, nil); !handled || e != nil {
 		t.Fatalf("LongSMS rental dispatch handled=%v err=%v", handled, e)
 	}
 	listings, offers := d.values()
@@ -305,7 +302,7 @@ func TestSMSManPublicPricesFromSiteKey(t *testing.T) {
 		t.Fatal("unexpected sms-man route", r.URL.Path)
 		return nil, nil
 	})}
-	if e := collectSMSMan(context.Background(), client, p, d, []string{"Telegram"}, smsmanPublicKey); e != nil {
+	if e := collectSMSMan(context.Background(), client, p, d, []string{"Telegram"}); e != nil {
 		t.Fatal(e)
 	}
 	_, o := d.values()

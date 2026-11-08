@@ -23,8 +23,10 @@ import (
 //	     -> {appID:{cost,count,application_id,country_id,country,application}}
 const smsmanBase = "https://api.sms-man.com"
 
-// The site key comes from config/provider-keys.json (sms-man.api_key); it is a
-// public read-only key, not an account token, so it is never hardcoded here.
+// Public publishable site key from sms-man.com page bootstrap (not an account
+// token, and not a model key). Exposes the public catalogue and per-country
+// prices read-only; it is published on the public website.
+const smsmanPublicKey = "ksYFPry6RvHBDMnKUjBFfzTPZbPJsADv2TGxbTny"
 
 func smsmanGet(ctx context.Context, client *http.Client, p Provider, path string, dst any) error {
 	u := smsmanBase + path
@@ -50,16 +52,13 @@ func smsmanGet(ctx context.Context, client *http.Client, p Provider, path string
 	return nil
 }
 
-func collectSMSMan(ctx context.Context, client *http.Client, p Provider, d *directPrices, focus []string, key string) error {
-	if key == "" {
-		return errors.New("SMS-Man 需要配置站点密钥（config/provider-keys.json 的 sms-man.api_key）")
-	}
+func collectSMSMan(ctx context.Context, client *http.Client, p Provider, d *directPrices, focus []string) error {
 	var services []struct {
 		ID    json.Number `json:"id"`
 		Title string      `json:"title"`
 		Code  string      `json:"code"`
 	}
-	if e := smsmanGet(ctx, client, p, "/api/services?api_key="+key+"&l=en", &services); e != nil {
+	if e := smsmanGet(ctx, client, p, "/api/services?api_key="+smsmanPublicKey+"&l=en", &services); e != nil {
 		return e
 	}
 	if len(services) == 0 || len(services) > 9000 {
@@ -70,7 +69,7 @@ func collectSMSMan(ctx context.Context, client *http.Client, p Provider, d *dire
 		Title string      `json:"title"`
 		Code  string      `json:"code"`
 	}
-	if e := smsmanGet(ctx, client, p, "/api/countries?api_key="+key+"&l=en", &countriesMap); e != nil {
+	if e := smsmanGet(ctx, client, p, "/api/countries?api_key="+smsmanPublicKey+"&l=en", &countriesMap); e != nil {
 		return e
 	}
 	if len(countriesMap) == 0 || len(countriesMap) > 500 {
@@ -123,7 +122,7 @@ func collectSMSMan(ctx context.Context, client *http.Client, p Provider, d *dire
 	}
 	results := readItems(ctx, codes, func(code string) (map[string]row, error) {
 		var data map[string]row
-		path := "/control/get-prices?token=" + key + "&currency=USD&country_id=" + code
+		path := "/control/get-prices?token=" + smsmanPublicKey + "&currency=USD&country_id=" + code
 		if e := smsmanGet(ctx, client, p, path, &data); e != nil {
 			return nil, e
 		}

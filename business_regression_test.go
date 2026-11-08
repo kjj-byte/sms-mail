@@ -32,7 +32,7 @@ func TestSMSManRejectsMismatchedAndMissingResponseIDs(t *testing.T) {
 					return reply(200, `{"3":{"cost":"0.01","count":10,`+ids+`}}`), nil
 				}
 			})}
-			if err := collectSMSMan(context.Background(), client, p, d, nil, "test-site-key"); err != nil {
+			if err := collectSMSMan(context.Background(), client, p, d, nil); err != nil {
 				t.Fatal(err)
 			}
 			_, offers := d.values()
