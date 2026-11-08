@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="description" content="选择接码对象与国家，对比各平台公开价格、时长与退款规则，前往对应平台官网办理。">
 <title>identity · SMS 比价与多渠道临时邮箱 | 聚合 {{len .Targets}} 个接码对象</title>
-<link rel="stylesheet" href="styles.css">
-<script src="app.js" defer></script>
+<meta name="asset-ver" content="{{.AssetVer}}">
+<link rel="stylesheet" href="styles.css?v={{.AssetVer}}">
+<script src="app.js?v={{.AssetVer}}" defer></script>
 </head>
 <body>
 <a class="skip" href="#results">跳到报价结果</a>

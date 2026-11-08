@@ -2,6 +2,16 @@
 
 测试环境：Windows amd64，Go 1.26.5。离线测试使用人工凭据，不充值购买、不发送短信；生成时保留本地已有邀请配置，不验证平台归因。
 
+## 静态资源版本指纹（缓存击穿，无需手动强刷）（2026-11-08）
+
+用户反馈线上 `?sort=price_asc` 改版后看不到新内容、改“每行 N 张”无反应。根因：GitHub Pages 对 HTML 有 `max-age=600` 且 `app.js`/`rows.json` 会被浏览器缓存，旧的 `app.js`（无 perRow 绑定）被复用。
+
+- `generate.go`：对 `web/styles.css`+`web/app.js`+`rows.json` 内容取 SHA-256 前 12 位作为 `AssetVer`，写入 `Page.AssetVer`。
+- `web/index.gohtml`：输出 `<meta name="asset-ver" content="{{.AssetVer}}">`，`<link href="styles.css?v={{.AssetVer}}">`、`<script src="app.js?v={{.AssetVer}}">`。
+- `web/app.js`：`fetch('rows.json?v=<asset-ver>')`，数据也缓存击穿。
+- 效果：**重新生成/发布后 URL 随内容变化，浏览器自动拉新（无感刷新）；内容不变则 URL 不变、不重复下载**。用户正常刷新/访问即拿到新版。
+- 验证：`generate_regression_test.go` 新增断言（meta 与 `?v=` 存在）；实测两次相同内容生成 hash 不变（`a859cc6f7b5a`），改 CSS 后 hash 变、回滚后复原；CDP 无头 Chrome 确认真实请求为 `styles.css?v=`/`app.js?v=`/`rows.json?v=`，选 4 张/行即时生效。根模块 `go test ./...`、`go vet`、管理端 `go test ./...` 通过；已重建并重新发布。
+
 ## 卡片每行张数可选（2026-11-08）
 
 用户要求：默认每行 3 张，增加「每行几张」的可选项。

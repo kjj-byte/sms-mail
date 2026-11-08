@@ -55,6 +55,13 @@ func TestGeneratePreservesOfferKindsConditionsAndOriginalPrices(t *testing.T) {
 	if strings.Contains(string(page), `id="rows-data"`) {
 		t.Fatal("rows still inlined into index.html; expected separate rows.json")
 	}
+	// Cache-busting: assets must be requested with a content-hash version so a
+	// rebuild auto-refreshes the client without a manual hard refresh.
+	for _, want := range []string{`<meta name="asset-ver" content="`, `href="styles.css?v=`, `src="app.js?v=`} {
+		if !strings.Contains(string(page), want) {
+			t.Fatalf("missing cache-busting marker %q", want)
+		}
+	}
 	data, err := os.ReadFile(filepath.Join(out, "rows.json"))
 	if err != nil {
 		t.Fatal(err)

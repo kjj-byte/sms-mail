@@ -492,8 +492,11 @@
   form.addEventListener('reset', () => setTimeout(() => { field('sort').value = 'price_asc'; services(); notice.textContent = ''; render(true); }, 0));
   window.addEventListener('popstate', restore);
   form.hidden = false;
-  // Load the price rows asynchronously, then run the initial render.
-  fetch('rows.json', {cache: 'no-cache'})
+  // Load the price rows asynchronously, then run the initial render. The ?v=
+  // asset version (from the meta tag) busts caches so a rebuilt site is picked
+  // up without a manual hard refresh.
+  const assetVer = (document.querySelector('meta[name="asset-ver"]') || {}).content || '';
+  fetch('rows.json' + (assetVer ? '?v=' + encodeURIComponent(assetVer) : ''), {cache: 'no-cache'})
     .then(r => r.ok ? r.json() : {})
     .then(data => { applyPayload(data || {}); })
     .catch(() => { /* keep empty defaults; page still renders filters */ })

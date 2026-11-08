@@ -2,6 +2,8 @@ package identity
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"html/template"
@@ -35,6 +37,7 @@ type Page struct {
 	PriceUpdate *PriceUpdate
 	Targets     []TargetOption
 	RowsJSON    template.JS // compact serialized rows for client-side card rendering
+	AssetVer    string      // content hash of app.js/styles.css/rows, for cache-busting
 }
 
 // prodJS holds product-level fields shared by every offer of that product, so the
@@ -398,6 +401,19 @@ func Generate(catalogPath, referralsPath, out string) error {
 		page.RowsJSON = template.JS(b)
 	} else {
 		page.RowsJSON = `{"products":{},"channels":{},"pool":[""],"rows":[]}`
+	}
+	// Cache-busting: hash the static assets + data so the generated HTML points at
+	// versioned URLs. A rebuild changes the URL, so browsers auto-fetch the new
+	// app.js/styles.css/rows without a manual hard refresh (seamless update).
+	{
+		h := sha256.New()
+		for _, name := range []string{"web/styles.css", "web/app.js"} {
+			if b, err := assets.ReadFile(name); err == nil {
+				h.Write(b)
+			}
+		}
+		h.Write([]byte(page.RowsJSON))
+		page.AssetVer = hex.EncodeToString(h.Sum(nil))[:12]
 	}
 	t, e := template.New("index.gohtml").Funcs(template.FuncMap{"label": label, "join": strings.Join, "money": money, "toJSON": func(v any) template.JS {
 		b, err := json.Marshal(v)
