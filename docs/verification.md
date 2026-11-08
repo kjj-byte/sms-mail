@@ -2,6 +2,15 @@
 
 测试环境：Windows amd64，Go 1.26.5。离线测试使用人工凭据，不充值购买、不发送短信；生成时保留本地已有邀请配置，不验证平台归因。
 
+## 美化原生 <select> 下拉框外观（2026-11-08）
+
+用户截图指出筛选项（主区等）仍是浏览器原生浅色下拉弹层，与页面风格不符。
+
+- `:root` 加 `color-scheme: dark`：原生下拉弹层与滚动条走深色主题（Chromium/Edge 生效）。
+- 所有筛选/高级/邮箱/列筛选 `<select>`：`appearance: none` + 自定义 SVG chevron（右侧灰色箭头，聚焦时紫色）+ `text-overflow: ellipsis`；`option` 深色背景、选中项深紫高亮。
+- 局限：原生 `<select>` 弹层的“高亮条”由操作系统渲染，无法完全改成主题紫色（仅能随 `color-scheme: dark` 变暗）。若要像素级一致需自绘下拉组件，会牵动 `service` 的动态 focus 挂载与 URL 恢复逻辑，风险大，本轮不做。
+- 验证：CDP 无头 Chrome 截图确认筛选区各 select 均为深色圆角 + chevron；computed style `appearance:none`、`color-scheme:dark`、chevron 背景正确。根模块 `go test ./...`、`go vet`、管理端 `go test ./...` 通过；已重建并发布。
+
 ## 优化「各渠道起充」与「每行 N 张」外观（2026-11-08）
 
 用户反馈两个控件外观太简陋，重做视觉：

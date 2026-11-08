@@ -4,6 +4,7 @@
    ========================================================================== */
 
 :root {
+  color-scheme: dark;
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, "Cascadia Code", Menlo, Monaco, Consolas, monospace;
 
@@ -1855,4 +1856,52 @@ ul, ol { list-style: none; }
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ==========================================================================
+   Custom-styled native <select> (dark popup + chevron), matching the theme.
+   We keep native <select> for logic/a11y; color-scheme:dark darkens the OS
+   popup, appearance:none + a background chevron replaces the default arrow.
+   ========================================================================== */
+.filter-cell select,
+.adv-cell select,
+.mail-field-item select,
+.col-filters select,
+.per-row-control select {
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 30px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  cursor: pointer;
+}
+.filter-cell select:hover,
+.adv-cell select:hover,
+.mail-field-item select:hover,
+.col-filters select:hover {
+  border-color: var(--border-medium);
+}
+.filter-cell select:focus,
+.adv-cell select:focus {
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b5cf6' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+/* Native popup options (Chromium/Edge honor these; the OS highlight stays). */
+.filter-cell select option,
+.adv-cell select option,
+.mail-field-item select option,
+.col-filters select option,
+.per-row-control select option {
+  background-color: #151926;
+  color: var(--text-primary);
+}
+.filter-cell select option:checked,
+.adv-cell select option:checked,
+.mail-field-item select option:checked,
+.col-filters select option:checked {
+  background-color: #2a2350;
+  color: #fff;
 }
