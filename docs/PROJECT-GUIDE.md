@@ -148,9 +148,9 @@ Set-Location 'D:\sms\admin-panel'
 
 ## 7. 采集（`prices.go / UpdatePrices`）
 
-- 读 `config/price-update.json`（`sources[]` 每项 `provider/product/url/currency`；`provider_keys` 指向 `config/provider-keys.json`；`analysis_fallback` 默认 false）。
-- 每来源：优先官方匿名/认证只读 API（`public_*.go` / `authenticated_prices.go`），失败再抓价格页/内嵌数据（`page_*.go`），仍不行且开 `analysis_fallback` 才用兼容 Chat Completions 分析（清理短信示例后再发）。
-- **证据校验**：金额、国家、单位、term、币种必须能在同一原文片段里找到（`validateExtraction`/`containsEvidence`），否则丢弃；短信验证码示例不得作证据；截断的大响应整批丢弃。
+- 读 `config/price-update.json`（`sources[]` 每项 `provider/product/url/currency`；`provider_keys` 指向 `config/provider-keys.json`）。
+- 每来源：优先官方匿名/认证只读 API（`public_*.go` / `authenticated_prices.go`），失败再抓价格页/内嵌数据（`page_*.go`）。全流程不调用模型。
+- **证据校验**：金额、国家、单位、term、币种必须能在同一原文片段里找到，否则丢弃；短信验证码示例不得作证据；截断的大响应整批丢弃。
 - 按「渠道×对象」保留各国最低价；5000+ 对象的渠道只对重点对象（Google/Telegram/WhatsApp/OpenAI，见 `focus`）拉逐国价，其余只记**全球起价**（country=未知）——**这是设计取舍，不是缺数据**（约 96% 对象只有全球起价）。例外：「其他/未列出 (Any Other)」始终保留逐国价，它没有具体服务可比，只能按国家比较。
 - 写回：`catalog.Validate()` → 变更检测（内容变了才写）→ 备份 `.backup` → 原子替换；失败保留旧文件。
 

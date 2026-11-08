@@ -197,25 +197,6 @@ func collectPriceSource(ctx context.Context, client *http.Client, p Provider, d 
 			if p.ID == "textverified" {
 				collectTextverifiedPages(ctx, client, p, raw, d, cfg.PriceTargets)
 			}
-			if len(d.offers) == 0 && cfg.AnalysisFallback {
-				text, e := sourceText(raw, contentType)
-				if e == nil {
-					result, e := analyzeSource(ctx, client, cfg, d.source, d.product, d.catalog.Services, text)
-					if e == nil {
-						listings, offers, issues := extractTargets(d.catalog, result, text, d.source, d.product, d.now)
-						for _, l := range listings {
-							d.listings[l.ServiceID] = l
-						}
-						for _, o := range offers {
-							o.Method = "page_analysis"
-							d.offers[o.ID] = o
-						}
-						d.warnings = append(d.warnings, issues...)
-					} else {
-						d.warnings = append(d.warnings, e.Error())
-					}
-				}
-			}
 		}
 	}
 	l, o := d.values()

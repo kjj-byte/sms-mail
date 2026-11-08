@@ -1,8 +1,5 @@
 {
   "schema_version": 1,
-  "baseurl": "",
-  "api_key": "",
-  "model": "",
   "sources": [
     {
       "provider": "fivesim",
@@ -87,7 +84,6 @@
       "url": "https://sms4sats.com/"
     }
   ],
-  "analysis_fallback": false,
   "price_targets": [
     "Google",
     "Telegram",

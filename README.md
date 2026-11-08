@@ -22,7 +22,7 @@ SMS 比价导航与多渠道临时邮箱工作区。平台名单及接入状态�
 
 已继续修复采集失败原因，并新增独立 [平台密钥配置](config/provider-keys.json)；支持 SMS-Man、Tiger SMS、GrizzlySMS 的只读认证价格接入，填写各平台密钥及实际原币种后生效。DaisySMS 已按官网停服公告移除；SMS-Activate、Truverifi 已移出候选，见 [网站复核记录](docs/site-availability.md)。具体见 [排查与修复](docs/collection-repairs.md)。
 
-运行 `update-prices.cmd`：优先调用已核实的官方匿名价格 API，没有可用公开接口或接口失败时直接读取官网页面及内嵌数据。默认 `analysis_fallback: false`，不需要分析 API，也不产生模型调用；你已填写的设置仍然保留。
+运行 `update-prices.cmd`：优先调用已核实的官方匿名价格 API，没有可用公开接口或接口失败时直接读取官网页面及内嵌数据。全流程不调用模型、不需要模型凭据。
 
 当前数量、资源测量与本轮检查统一记录在 [最新验收快照](docs/verification.md#当前验收快照2026-11-07)。目录包含历史保留记录，记录总数不代表本轮成功采集数；每个来源的本轮结果见页面顶栏“采集范围与时间”。[采集完整性说明](docs/collection-coverage.md) 保留历史轮次与覆盖策略。
 
